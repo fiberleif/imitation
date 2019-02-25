@@ -7,7 +7,6 @@ import os, os.path, shutil
 from policyopt import util
 
 
-
 # PBS
 import subprocess, tempfile, datetime
 def create_pbs_script(commands, outputfiles, jobname, queue, nodes, ppn):
@@ -263,12 +262,16 @@ def phase1_train(spec, specfilename):
                     })
 
     pbsopts = spec['options']['pbs']
-    runpbs(
-        cmd_templates, outputfilenames, argdicts,
-        jobname=pbsopts['jobname'], queue=pbsopts['queue'], nodes=1, ppn=pbsopts['ppn'],
-        job_range=pbsopts['range'] if 'range' in pbsopts else None,
-        qsub_script_copy=os.path.join(checkptdir, 'qsub_script.sh')
-    )
+    #runpbs(
+    #    cmd_templates, outputfilenames, argdicts,
+    #    jobname=pbsopts['jobname'], queue=pbsopts['queue'], nodes=1, ppn=pbsopts['ppn'],
+    #    job_range=pbsopts['range'] if 'range' in pbsopts else None,
+    #    qsub_script_copy=os.path.join(checkptdir, 'qsub_script.sh')
+    #)
+    import subprocess
+    all_commands = [x.format(**y) for (x,y) in zip(cmd_templates,argdicts)]
+    for command in all_commands:
+        subprocess.call(command.split(" "))
 
     # Copy the pipeline yaml file to the output dir too
     shutil.copyfile(specfilename, os.path.join(checkptdir, 'pipeline.yaml'))
