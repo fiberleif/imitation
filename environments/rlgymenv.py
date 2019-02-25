@@ -35,14 +35,14 @@ class RLGymSim(policyopt.Simulation):
     def done(self):
         return self.is_done
 
-    def draw(self, track_body_name='torso'):
-        self.env.render()
-        if track_body_name is not None and track_body_name in self.env.model.body_names:
-            self.env.viewer.cam.trackbodyid = self.env.model.body_names.index(track_body_name)
+    #def draw(self, track_body_name='torso'):
+    #    self.env.render()
+    #    if track_body_name is not None and track_body_name in self.env.model.body_names:
+    #        self.env.viewer.cam.trackbodyid = self.env.model.body_names.index(track_body_name)
 
-    def __del__(self):
-        if self.env.viewer:
-            self.env.viewer.finish()
+    #def __del__(self):
+    #    if self.env.viewer:
+    #        self.env.viewer.finish()
 
     def reset(self):
         self.curr_obs = self.env.reset()
