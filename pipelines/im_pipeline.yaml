@@ -23,6 +23,19 @@ tasks:
     data_subsamp_freq: 20
     cuts_off_on_success: false
 
+  - name: reacher
+    env: Reacher-v1
+    policy: expert_policies/modern/log_Reacher-v1_4.h5/snapshots/iter0000500
+    data_subsamp_freq: 20
+    cuts_off_on_success: false
+
+  - name: humanoid
+    env: Humanoid-v1
+    policy: expert_policies/modern/log_humanoid_1.h5/snapshots/iter0000500
+    data_subsamp_freq: 20
+    cuts_off_on_success: false
+
+
 training:
   full_dataset_num_trajs: 50
   dataset_num_trajs: [4, 11, 18, 25]
