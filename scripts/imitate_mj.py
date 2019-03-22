@@ -87,7 +87,7 @@ def main():
     parser.add_argument('--reward_steps', type=int, default=1)
     parser.add_argument('--reward_ent_reg_weight', type=float, default=.001)
     parser.add_argument('--reward_include_time', type=int, default=0)
-    parser.add_argument('--sim_batch_size', type=int, default=None)
+    parser.add_argument('--sim_batch_size', type=int, default=1)
     parser.add_argument('--min_total_sa', type=int, default=50000)
     parser.add_argument('--favor_zero_expert_reward', type=int, default=0)
     # Saving stuff
