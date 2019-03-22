@@ -459,10 +459,6 @@ class ImitationOptimizer(object):
                 # Intuitively, the policy gets a bonus for being less certain of its actions
                 orig_rcurr_stacked = rcurr_stacked.copy()
 
-                # add reward signal from environment
-                reward_codff = 0.1
-                rcurr_stacked = reward_codff * rcurr_stacked - sampbatch.r.stacked
-
                 if self.policy_ent_reg is not None and self.policy_ent_reg != 0:
                     assert self.policy_ent_reg > 0
                     # XXX probably faster to compute this from sampbatch.adist instead
