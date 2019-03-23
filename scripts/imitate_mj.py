@@ -103,7 +103,7 @@ def main():
     args = parser.parse_args()
 
     # configure log
-    log_dir = os.path.join(args.log_dir, args.env_name, args.run)
+    log_dir = os.path.join(args.log_dir, args.env_name, str(args.run))
     logger.configure(dir=log_dir)
 
     # configure visualize
