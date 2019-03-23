@@ -7,7 +7,7 @@ import numpy as np
 import os
 import os.path
 import tables, warnings; warnings.filterwarnings('ignore', category=tables.NaturalNameWarning)
-import util
+import policyopt.util as util
 
 import theano
 from theano import tensor
