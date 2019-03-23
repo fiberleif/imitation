@@ -40,7 +40,7 @@ class VisdomVisualizer(object):
             print('Error: Send graph error! This error will be ignored.')
             self.win = None
 
-    def paint(self, name, data: dict):
+    def paint(self, name, data):
         for key, val in data.items():
             self.data[name][key].append(float(val))
 
