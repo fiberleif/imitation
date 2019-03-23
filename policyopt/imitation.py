@@ -1,5 +1,7 @@
 from . import nn, rl, util, RaggedArray, ContinuousSpace, FiniteSpace, optim, thutil
 import numpy as np
+import policyopt
+import policyopt.logger as logger
 from contextlib import contextmanager
 import theano; from theano import tensor
 
@@ -411,9 +413,13 @@ class LinearReward(object):
 
 
 class ImitationOptimizer(object):
-    def __init__(self, mdp, discount, lam, policy, sim_cfg, step_func, reward_func, value_func, policy_obsfeat_fn, reward_obsfeat_fn, policy_ent_reg, ex_obs, ex_a, ex_t):
-        self.mdp, self.discount, self.lam, self.policy = mdp, discount, lam, policy
+    def __init__(self, mdp, eval_mdp, discount, lam, policy, sim_cfg, step_func, reward_func, value_func,
+                 policy_obsfeat_fn, reward_obsfeat_fn, policy_ent_reg, ex_obs, ex_a, ex_t, visualizer):
+        self.mdp, self.eval_mdp, self.discount, self.lam, self.policy = mdp, eval_mdp, discount, lam, policy
         self.sim_cfg = sim_cfg
+        self.eval_cfg = policyopt.SimConfig(
+                min_num_trajs=10, min_total_sa=-1,
+                batch_size=1, max_traj_len=1000)
         self.step_func = step_func
         self.reward_func = reward_func
         self.value_func = value_func
@@ -431,6 +437,7 @@ class ImitationOptimizer(object):
         self.total_time = 0.
         self.curr_iter = 0
         self.last_sampbatch = None # for outside access for debugging
+        self.visualizer = visualizer
 
     def step(self):
         with util.Timer() as t_all:
@@ -542,3 +549,26 @@ class ImitationOptimizer(object):
         ]
         self.curr_iter += 1
         return fields
+
+    def eval(self):
+        sampbatch = self.eval_mdp.sim_mp(
+            policy_fn=lambda obsfeat_B_Df: self.policy.sample_actions(obsfeat_B_Df, deterministic=True),
+            obsfeat_fn=self.policy_obsfeat_fn,
+            cfg=self.eval_cfg)
+
+        eval_avg_ret = sampbatch.r.padded(fill=0.).sum(axis=1).mean()
+        eval_avg_length = int(np.mean([len(traj) for traj in sampbatch]))
+        timesteps_used = self.curr_iter * self.sim_cfg.min_num_trajs
+
+        logger.record_tabular("eval_avg_ret", eval_avg_ret)
+        logger.record_tabular("eval_avg_length", eval_avg_length)
+        logger.record_tabular("TimestepElapsed", timesteps_used)
+        logger.record_tabular("TimeCost", self.total_time)
+        logger.dump_tabular()
+
+        self.visualizer.paint('return-average', {'x': timesteps_used, 'y': eval_avg_ret})
+        self.visualizer.draw_line('return-average', 'blue')
+
+
+
+

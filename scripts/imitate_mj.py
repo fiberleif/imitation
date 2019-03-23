@@ -1,8 +1,10 @@
-import argparse, h5py, json
+import argparse, h5py, json, os
 import numpy as np
 from environments import rlgymenv
 import policyopt
 from policyopt import imitation, nn, rl, util
+import policyopt.logger as logger
+from policyopt.visualize import VisdomVisualizer
 
 
 MODES = ('bclone', 'ga')
@@ -94,9 +96,20 @@ def main():
     parser.add_argument('--print_freq', type=int, default=1)
     parser.add_argument('--save_freq', type=int, default=20)
     parser.add_argument('--plot_freq', type=int, default=0)
-    parser.add_argument('--log', type=str, required=False)
-
+    parser.add_argument('--log_freq', type=int, default=20)
+    parser.add_argument('--log_dir', type=str, required=False)
+    # Runs
+    parser.add_argument('--run', type=int, default=0)
     args = parser.parse_args()
+
+    # configure log
+    log_dir = os.path.join(args.log_dir, args.env_name, args.run)
+    logger.configure(dir=log_dir)
+
+    # configure visualize
+    visualizer = VisdomVisualizer('guoqing-GAIL-theano', args.env_name + "-traj-" + str(args.limit_trajs) +
+                                  "-run-" + str(args.run))
+    visualizer.initialize('return-average', 'blue')
 
     # Initialize the MDP
     if args.tiny_policy:
@@ -106,6 +119,9 @@ def main():
     print(argstr)
 
     mdp = rlgymenv.RLGymMDP(args.env_name)
+    # eval env
+    eval_mdp = rlgymenv.RLGymMDP(args.env_name)
+
     util.header('MDP observation space, action space sizes: %d, %d\n' % (mdp.obs_space.dim, mdp.action_space.storage_size))
 
     # Initialize the policy
@@ -199,6 +215,7 @@ def main():
 
         opt = imitation.ImitationOptimizer(
             mdp=mdp,
+            eval_mdp=eval_mdp,
             discount=args.discount,
             lam=args.lam,
             policy=policy,
@@ -213,7 +230,8 @@ def main():
             policy_ent_reg=args.policy_ent_reg,
             ex_obs=exobs_Bstacked_Do,
             ex_a=exa_Bstacked_Da,
-            ex_t=ext_Bstacked)
+            ex_t=ext_Bstacked,
+            visualizer=visualizer)
 
     # Set observation normalization
     if args.obsnorm_mode == 'expertdata':
@@ -222,33 +240,34 @@ def main():
         if vf is not None: vf.update_obsnorm(opt.policy_obsfeat_fn(exobs_Bstacked_Do))
 
     # Run optimizer
-    log = nn.TrainingLog(args.log, [('args', argstr)])
     for i in xrange(args.max_iter):
         iter_info = opt.step()
-        log.write(iter_info, print_header=i % (20*args.print_freq) == 0, display=i % args.print_freq == 0)
-        if args.save_freq != 0 and i % args.save_freq == 0 and args.log is not None:
-            log.write_snapshot(policy, i)
+        if args.log_freq != 0 and i % args.log_freq == 0 and args.log is not None:
+            opt.eval()
 
-        if args.plot_freq != 0 and i % args.plot_freq == 0:
-            exdata_N_Doa = np.concatenate([exobs_Bstacked_Do, exa_Bstacked_Da], axis=1)
-            pdata_M_Doa = np.concatenate([opt.last_sampbatch.obs.stacked, opt.last_sampbatch.a.stacked], axis=1)
-
-            # Plot reward
-            import matplotlib.pyplot as plt
-            _, ax = plt.subplots()
-            idx1, idx2 = 0,1
-            range1 = (min(exdata_N_Doa[:,idx1].min(), pdata_M_Doa[:,idx1].min()), max(exdata_N_Doa[:,idx1].max(), pdata_M_Doa[:,idx1].max()))
-            range2 = (min(exdata_N_Doa[:,idx2].min(), pdata_M_Doa[:,idx2].min()), max(exdata_N_Doa[:,idx2].max(), pdata_M_Doa[:,idx2].max()))
-            reward.plot(ax, idx1, idx2, range1, range2, n=100)
-
-            # Plot expert data
-            ax.scatter(exdata_N_Doa[:,idx1], exdata_N_Doa[:,idx2], color='blue', s=1, label='expert')
-
-            # Plot policy samples
-            ax.scatter(pdata_M_Doa[:,idx1], pdata_M_Doa[:,idx2], color='red', s=1, label='apprentice')
-
-            ax.legend()
-            plt.show()
+        # if args.save_freq != 0 and i % args.save_freq == 0 and args.log is not None:
+        #     log.write_snapshot(policy, i)
+        #
+        # if args.plot_freq != 0 and i % args.plot_freq == 0:
+        #     exdata_N_Doa = np.concatenate([exobs_Bstacked_Do, exa_Bstacked_Da], axis=1)
+        #     pdata_M_Doa = np.concatenate([opt.last_sampbatch.obs.stacked, opt.last_sampbatch.a.stacked], axis=1)
+        #
+        #     # Plot reward
+        #     import matplotlib.pyplot as plt
+        #     _, ax = plt.subplots()
+        #     idx1, idx2 = 0,1
+        #     range1 = (min(exdata_N_Doa[:,idx1].min(), pdata_M_Doa[:,idx1].min()), max(exdata_N_Doa[:,idx1].max(), pdata_M_Doa[:,idx1].max()))
+        #     range2 = (min(exdata_N_Doa[:,idx2].min(), pdata_M_Doa[:,idx2].min()), max(exdata_N_Doa[:,idx2].max(), pdata_M_Doa[:,idx2].max()))
+        #     reward.plot(ax, idx1, idx2, range1, range2, n=100)
+        #
+        #     # Plot expert data
+        #     ax.scatter(exdata_N_Doa[:,idx1], exdata_N_Doa[:,idx2], color='blue', s=1, label='expert')
+        #
+        #     # Plot policy samples
+        #     ax.scatter(pdata_M_Doa[:,idx1], pdata_M_Doa[:,idx2], color='red', s=1, label='apprentice')
+        #
+        #     ax.legend()
+        #     plt.show()
 
 
 if __name__ == '__main__':
