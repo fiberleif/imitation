@@ -157,7 +157,7 @@ class Model(object):
 
             for v in self.get_all_variables():
                 assert v.name[0] == '/'; vname = v.name[1:]
-                print 'Reading', vname
+                print('Reading', vname)
                 if vname in dset:
                     v.set_value(dset[vname][...])
                 elif vname+':0' in dset:
@@ -265,7 +265,7 @@ class FeedforwardNet(Layer):
 
         layerspec = json.loads(layerspec_json)
         util.header('Loading feedforward net specification')
-        print json.dumps(layerspec, indent=2, separators=(',', ': '))
+        print(json.dumps(layerspec, indent=2, separators=(',', ': ')))
 
         self.layers = []
         with variable_scope(type(self).__name__) as self.__varscope:
@@ -319,10 +319,10 @@ def _printfields(fields, sep=' | ', width=8, precision=4, print_header=True):
                 raise NotImplementedError(typeinfo)
     if print_header:
         header = ((('{:^%d}' % width) + sep) * len(names))[:-len(sep)].format(*names)
-        print '-'*len(header)
-        print header
-        print '-'*len(header)
-    print sep.join(fmts).format(*vals)
+        print('-'*len(header))
+        print(header)
+        print('-'*len(header))
+    print(sep.join(fmts).format(*vals))
 
 def _type_to_col(t, pos):
     if t is int: return tables.Int32Col(pos=pos)
@@ -472,7 +472,7 @@ def test_standardizer():
     allx = np.concatenate([x_N_D, x2_N_D], axis=0)
     assert np.allclose(s._mean_1_D.get_value()[0,:], allx.mean(axis=0))
     assert np.allclose(s.get_stdev(), allx.std(axis=0))
-    print 'ok'
+    print('ok')
 
 if __name__ == '__main__':
     test_standardizer()

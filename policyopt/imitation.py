@@ -3,7 +3,8 @@ import numpy as np
 import policyopt
 import policyopt.logger as logger
 from contextlib import contextmanager
-import theano; from theano import tensor
+import theano
+from theano import tensor
 
 from scipy.optimize import fmin_l_bfgs_b
 
@@ -19,7 +20,7 @@ class BehavioralCloningOptimizer(object):
         shuffled_inds = np.random.permutation(num_examples)
         train_inds, val_inds = shuffled_inds[:num_train], shuffled_inds[num_train:]
         assert len(train_inds) >= 1 and len(val_inds) >= 1
-        print '{} training examples and {} validation examples'.format(len(train_inds), len(val_inds))
+        print('{} training examples and {} validation examples'.format(len(train_inds), len(val_inds)))
         self.train_ex_obsfeat, self.train_ex_a = self.obsfeat_fn(ex_obs[train_inds]), ex_a[train_inds]
         self.val_ex_obsfeat, self.val_ex_a = self.obsfeat_fn(ex_obs[val_inds]), ex_a[val_inds]
 
@@ -274,7 +275,7 @@ class LinearReward(object):
 
         self.obsfeat_space, self.action_space = obsfeat_space, action_space
         assert mode in ['l2ball', 'simplex']
-        print 'Linear reward function type: {}'.format(mode)
+        print('Linear reward function type: {}'.format(mode))
         self.simplex = mode == 'simplex'
         self.favor_zero_expert_reward = favor_zero_expert_reward
         self.include_time = include_time
@@ -295,7 +296,7 @@ class LinearReward(object):
         self.expert_feat_Df = self._compute_featexp(self.exobs_Bex_Do, self.exa_Bex_Da, self.ext_Bex)
         # The current reward function
         feat_dim = self.expert_feat_Df.shape[0]
-        print 'Linear reward: {} features'.format(feat_dim)
+        print('Linear reward: {} features'.format(feat_dim))
         if self.simplex:
             # widx is the index of the most discriminative reward function
             self.widx = np.random.randint(feat_dim)
@@ -348,7 +349,7 @@ class LinearReward(object):
             # To get features that include actions, we'll have blocks of obs-only features,
             # one block for each action.
             assert a_B_Da.shape[1] == 1
-            action_inds = [np.flatnonzero(a_B_Da[:,0] == a) for a in xrange(self.action_space.size)]
+            action_inds = [np.flatnonzero(a_B_Da[:,0] == a) for a in range(self.action_space.size)]
             assert sum(len(inds) for inds in action_inds) == B
             action_block_size = obsonly_feat_B_f.shape[1]
             # Place obs features into their appropriate blocks

@@ -46,10 +46,10 @@ def test_discount():
     gamma = .81
     r_N_T_D = np.random.rand(N, T, D)
     q_N_T_D = discount(r_N_T_D, gamma)
-    for i in xrange(N):
-        for j in xrange(D):
+    for i in range(N):
+        for j in range(D):
             r_T = r_N_T_D[i,:,j]
-            for t in xrange(T):
+            for t in range(T):
                 assert np.allclose(q_N_T_D[i,t,j], (r_T[t:] * np.power(gamma, np.arange(T-t))).sum())
 
 def standardized(a):
@@ -91,7 +91,7 @@ def sample_cats(probs_N_K):
 
 def batched(lst, max_batch_size):
     num_batches = int(np.ceil(float(len(lst)) / max_batch_size))
-    for i in xrange(num_batches):
+    for i in range(num_batches):
         yield lst[i*max_batch_size : (i+1)*max_batch_size]
 
 def objtranspose(lists):
@@ -146,9 +146,9 @@ class Colors(object):
     WARNING = '\033[93m'
     FAIL = '\033[91m'
     ENDC = '\033[0m'
-def header(s): print Colors.HEADER + s + Colors.ENDC
-def warn(s): print Colors.WARNING + s + Colors.ENDC
-def failure(s): print Colors.FAIL + s + Colors.ENDC
+def header(s): print(Colors.HEADER + s + Colors.ENDC)
+def warn(s): print(Colors.WARNING + s + Colors.ENDC)
+def failure(s): print(Colors.FAIL + s + Colors.ENDC)
 
 
 def mkdir_p(path):

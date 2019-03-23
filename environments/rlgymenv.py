@@ -60,7 +60,7 @@ def _convert_space(space):
 
 class RLGymMDP(policyopt.MDP):
     def __init__(self, env_name):
-        print 'Gym version:', gym.version.VERSION
+        print('Gym version:', gym.version.VERSION)
         self.env_name = env_name
 
         tmpsim = self.new_sim()

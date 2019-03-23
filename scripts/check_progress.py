@@ -18,7 +18,7 @@ for filename in args.logfiles:
                 assert snapshot_name.startswith('iter')
                 last_snapshot_iter = int(snapshot_name[len('iter'):])
                 #if last_snapshot_iter != 300:
-                print filename, last_snapshot_iter
+                print(filename, last_snapshot_iter)
         except:
             util.warn('Error opening {}'.format(filename))
             continue

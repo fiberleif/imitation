@@ -25,7 +25,7 @@ def main():
 
     # Load the saved state
     policy_file, policy_key = util.split_h5_name(args.policy)
-    print 'Loading policy parameters from %s in %s' % (policy_key, policy_file)
+    print('Loading policy parameters from %s in %s' % (policy_key, policy_file))
     with h5py.File(policy_file, 'r') as f:
         train_args = json.loads(f.attrs['args'])
         dset = f[policy_key]
@@ -34,7 +34,7 @@ def main():
 
     # Initialize the MDP
     env_name = train_args['env_name']
-    print 'Loading environment', env_name
+    print('Loading environment', env_name)
     mdp = rlgymenv.RLGymMDP(env_name)
     util.header('MDP observation space, action space sizes: %d, %d\n' % (mdp.obs_space.dim, mdp.action_space.storage_size))
 
@@ -60,7 +60,7 @@ def main():
 
     if args.eval_only:
         n = 50
-        print 'Evaluating based on {} trajs'.format(n)
+        print('Evaluating based on {} trajs'.format(n))
 
         if False:
             eval_trajbatch = mdp.sim_mp(
@@ -73,17 +73,17 @@ def main():
             avgr = eval_trajbatch.r.stacked.mean()
             lengths = np.array([len(traj) for traj in eval_trajbatch])
             ent = policy._compute_actiondist_entropy(eval_trajbatch.adist.stacked).mean()
-            print 'ret: {} +/- {}'.format(returns.mean(), returns.std())
-            print 'avgr: {}'.format(avgr)
-            print 'len: {} +/- {}'.format(lengths.mean(), lengths.std())
-            print 'ent: {}'.format(ent)
-            print returns
+            print('ret: {} +/- {}'.format(returns.mean(), returns.std()))
+            print('avgr: {}'.format(avgr))
+            print('len: {} +/- {}'.format(lengths.mean(), lengths.std()))
+            print('ent: {}'.format(ent))
+            print(returns)
         else:
             returns = []
             lengths = []
             sim = mdp.new_sim()
-            for i_traj in xrange(n):
-                print i_traj, n
+            for i_traj in range(n):
+                print(i_traj, n)
                 sim.reset()
                 totalr = 0.
                 l = 0
@@ -98,7 +98,7 @@ def main():
 
     elif args.out is not None:
         # Sample trajs and write to file
-        print 'Saving traj samples to file: {}'.format(args.out)
+        print('Saving traj samples to file: {}'.format(args.out))
 
         assert not os.path.exists(args.out)
         assert args.count > 0
@@ -112,8 +112,7 @@ def main():
                 args.max_traj_len))
         trajbatch = policyopt.TrajBatch.FromTrajs(trajs)
 
-        print
-        print 'Average return:', trajbatch.r.padded(fill=0.).sum(axis=1).mean()
+        print('Average return:', trajbatch.r.padded(fill=0.).sum(axis=1).mean())
 
         # Save the trajs to a file
         with h5py.File(args.out, 'w') as f:
@@ -153,9 +152,9 @@ def main():
                 if steps % 1000 == 0:
                     tmpraw = np.concatenate(raw_obs, axis=0)
                     tmpnormed = np.concatenate(normalized_obs, axis=0)
-                    print 'raw mean, raw std, normed mean, normed std'
-                    print np.stack([tmpraw.mean(0), tmpraw.std(0), tmpnormed.mean(0), tmpnormed.std(0)])
-            print 'Steps: %d, return: %.5f' % (steps, totalr)
+                    print('raw mean, raw std, normed mean, normed std')
+                    print(np.stack([tmpraw.mean(0), tmpraw.std(0), tmpnormed.mean(0), tmpnormed.std(0)]))
+            print('Steps: %d, return: %.5f' % (steps, totalr))
 
 if __name__ == '__main__':
     main()

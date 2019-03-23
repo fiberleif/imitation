@@ -37,8 +37,8 @@ def main():
         ax = None
         for fname, df in fname2log.items():
             with pd.option_context('display.max_rows', 9999):
-                print fname
-                print df[-1:]
+                print(fname)
+                print(df[-1:])
 
 
             df['vf_r2'] = np.maximum(0,df['vf_r2'])
