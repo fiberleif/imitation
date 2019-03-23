@@ -44,7 +44,7 @@ training:
         --max_iter 4000
         --reward_include_time 0
         --reward_lr .01
-        --log_dir /log
+        --log_dir log
         --run {run}
 
 options:

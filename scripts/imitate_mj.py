@@ -25,13 +25,13 @@ def load_dataset(filename, limit_trajs, data_subsamp_freq):
         exr_B_T = f['r_B_T'][:dset_size,...][...]
         exlen_B = f['len_B'][:dset_size,...][...]
 
-    print 'Expert dataset size: {} transitions ({} trajectories)'.format(exlen_B.sum(), len(exlen_B))
-    print 'Expert average return:', exr_B_T.sum(axis=1).mean()
+    print('Expert dataset size: {} transitions ({} trajectories)'.format(exlen_B.sum(), len(exlen_B)))
+    print('Expert average return:', exr_B_T.sum(axis=1).mean())
 
     # Stack everything together
     start_times_B = np.random.RandomState(0).randint(0, data_subsamp_freq, size=exlen_B.shape[0])
-    print 'start times'
-    print start_times_B
+    print('start times')
+    print(start_times_B)
     exobs_Bstacked_Do = np.concatenate(
         [exobs_B_T_Do[i,start_times_B[i]:l:data_subsamp_freq,:] for i, l in enumerate(exlen_B)],
         axis=0)
@@ -43,8 +43,8 @@ def load_dataset(filename, limit_trajs, data_subsamp_freq):
 
     assert exobs_Bstacked_Do.shape[0] == exa_Bstacked_Da.shape[0] == ext_Bstacked.shape[0]# == np.ceil(exlen_B.astype(float)/data_subsamp_freq).astype(int).sum() > 0
 
-    print 'Subsampled data every {} timestep(s)'.format(data_subsamp_freq)
-    print 'Final dataset size: {} transitions (average {} per traj)'.format(exobs_Bstacked_Do.shape[0], float(exobs_Bstacked_Do.shape[0])/dset_size)
+    print('Subsampled data every {} timestep(s)'.format(data_subsamp_freq))
+    print('Final dataset size: {} transitions (average {} per traj)'.format(exobs_Bstacked_Do.shape[0], float(exobs_Bstacked_Do.shape[0])/dset_size))
 
     return exobs_Bstacked_Do, exa_Bstacked_Da, ext_Bstacked
 
@@ -153,7 +153,7 @@ def main():
 
     # Start optimization
     max_traj_len = args.max_traj_len if args.max_traj_len is not None else mdp.env_spec.timestep_limit
-    print 'Max traj len:', max_traj_len
+    print('Max traj len:', max_traj_len)
 
     if args.mode == 'bclone':
         # For behavioral cloning, only print output when evaluating
