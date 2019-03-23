@@ -559,7 +559,7 @@ class ImitationOptimizer(object):
 
         eval_avg_ret = sampbatch.r.padded(fill=0.).sum(axis=1).mean()
         eval_avg_length = int(np.mean([len(traj) for traj in sampbatch]))
-        timesteps_used = self.curr_iter * self.sim_cfg.min_num_trajs
+        timesteps_used = self.curr_iter * self.sim_cfg.min_total_sa
 
         logger.record_tabular("eval_avg_ret", eval_avg_ret)
         logger.record_tabular("eval_avg_length", eval_avg_length)
