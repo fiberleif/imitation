@@ -108,7 +108,7 @@ class CSVOutputFormat(KVWriter):
 
     def writekvs(self, kvs):
         # Add our current row to the history
-        extra_keys = list(kvs.keys() - self.keys)
+        extra_keys = list(set(kvs.keys()) - set(self.keys))
         extra_keys.sort()
         if extra_keys:
             self.keys.extend(extra_keys)
