@@ -103,12 +103,12 @@ def main():
     args = parser.parse_args()
 
     # configure log
-    log_dir = os.path.join(args.log_dir, args.env_name, str(args.run))
+    log_dir = os.path.join(args.log_dir, args.env_name, "batch_size_" + str(args.min_total_sa), "seed_" + str(args.run))
     logger.configure(dir=log_dir)
 
     # configure visualize
-    visualizer = VisdomVisualizer('guoqing-GAIL-theano', args.env_name + "-traj-" + str(args.limit_trajs) +
-                                  "-run-" + str(args.run))
+    visualizer = VisdomVisualizer('guoqing-GAIL-theano', args.env_name + "-traj-" + str(args.limit_trajs) + "-batch-" +
+                                  str(args.min_total_sa) + "-run-" + str(args.run))
     visualizer.initialize('return-average', 'blue')
 
     # Initialize the MDP
