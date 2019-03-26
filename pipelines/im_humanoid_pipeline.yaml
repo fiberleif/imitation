@@ -23,8 +23,8 @@ training:
         --limit_trajs {num_trajs}
         --data_subsamp_freq {data_subsamp_freq}
         --favor_zero_expert_reward {cuts_off_on_success}
-        --min_total_sa 50000
-        --max_iter 1501
+        --min_total_sa 5000
+        --max_iter 3000
         --reward_include_time 0
         --reward_lr .01
         --log_dir log
@@ -34,7 +34,7 @@ training:
 options:
   storagedir: imitation_runs/humanoid
   traj_subdir: trajs
-  checkpt_subdir: checkpoints
+  checkpt_subdir: checkpoints_humanoid
 
   eval_num_trajs: 50
   results_filename: results.h5
