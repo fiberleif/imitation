@@ -522,34 +522,10 @@ class ImitationOptimizer(object):
                 else:
                     vfit_print = []
 
-        # Log
         self.total_num_trajs += len(sampbatch)
         self.total_num_sa += sum(len(traj) for traj in sampbatch)
         self.total_time += t_all.dt
-        fields = [
-            ('iter', self.curr_iter, int),
-            ('trueret', sampbatch.r.padded(fill=0.).sum(axis=1).mean(), float), # average return for this batch of trajectories
-            ('iret', rcurr.padded(fill=0.).sum(axis=1).mean(), float), # average return on imitation reward
-            ('avglen', int(np.mean([len(traj) for traj in sampbatch])), int), # average traj length
-            ('ntrajs', self.total_num_trajs, int), # total number of trajs sampled over the course of training
-            ('nsa', self.total_num_sa, int), # total number of state-action pairs sampled over the course of training
-            ('ent', self.policy._compute_actiondist_entropy(sampbatch.adist.stacked).mean(), float), # entropy of action distributions
-            ('vf_r2', vfunc_r2, float),
-            ('tdvf_r2', simplev_r2, float),
-            ('dx', util.maxnorm(params0_P - self.policy.get_params()), float), # max parameter difference from last iteration
-        ] + step_print + vfit_print + rfit_print + [
-            ('avgr', rcurr_stacked.mean(), float), # average regularized reward encountered
-            ('avgunregr', orig_rcurr_stacked.mean(), float), # average unregularized reward
-            ('avgpreg', policyentbonus_B.mean(), float), # average policy regularization
-            # ('bcloss', -self.policy.compute_action_logprobs(exbatch_pobsfeat, exbatch_a).mean(), float), # negative log likelihood of expert actions
-            # ('bcloss', np.square(self.policy.compute_actiondist_mean(exbatch_pobsfeat) - exbatch_a).sum(axis=1).mean(axis=0), float),
-            ('tsamp', t_sample.dt, float), # time for sampling
-            ('tadv', t_adv.dt + t_vf_fit.dt, float), # time for advantage computation
-            ('tstep', t_step.dt, float), # time for step computation
-            ('ttotal', self.total_time, float), # total time
-        ]
         self.curr_iter += 1
-        return fields
 
     def eval(self):
         sampbatch = self.eval_mdp.sim_mp(

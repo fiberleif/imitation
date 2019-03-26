@@ -241,7 +241,7 @@ def main():
 
     # Run optimizer
     for i in xrange(args.max_iter):
-        iter_info = opt.step()
+        opt.step()
         if args.log_freq != 0 and i % args.log_freq == 0:
             opt.eval()
 
