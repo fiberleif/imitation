@@ -107,7 +107,7 @@ def main():
     logger.configure(dir=log_dir)
 
     # configure visualize
-    visualizer = VisdomVisualizer('guoqing-GAIL-theano', args.env_name + "-traj-" + str(args.limit_trajs) + "-batch-" +
+    visualizer = VisdomVisualizer('guoqing-GAIL-theano-25-stochastic', args.env_name + "-traj-" + str(args.limit_trajs) + "-batch-" +
                                   str(args.min_total_sa) + "-run-" + str(args.run))
     visualizer.initialize('return-average', 'blue')
 
