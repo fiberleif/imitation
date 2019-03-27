@@ -242,9 +242,8 @@ def main():
     # Run optimizer
     for i in xrange(args.max_iter):
         opt.step()
-        if args.log_freq != 0 and i % args.log_freq == 0:
+        if args.log_freq != 0 and (i + 1) % args.log_freq == 0:
             opt.eval()
-
         # if args.save_freq != 0 and i % args.save_freq == 0 and args.log is not None:
         #     log.write_snapshot(policy, i)
         #

@@ -40,6 +40,7 @@ training:
         --reward_include_time 0
         --reward_lr .01
         --log_dir log
+        --log_freq 10
         --run {run}
 
 options:
