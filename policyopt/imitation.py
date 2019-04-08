@@ -470,8 +470,8 @@ class ImitationOptimizer(object):
                 # POfD: combine discrimintator and env reward
                 reward_codff = 0.1
                 assert rcurr_stacked.shape == sampbatch.r.stacked.shape
-                print("rcurr shape", rcurr_stacked.shape)
-                print("sample.r.stacked shape", sampbatch.r.stacked.shape)
+                # print("rcurr shape", rcurr_stacked.shape)
+                # print("sample.r.stacked shape", sampbatch.r.stacked.shape)
                 rcurr_stacked = reward_codff * rcurr_stacked + sampbatch.r.stacked
 
                 if self.policy_ent_reg is not None and self.policy_ent_reg != 0:
