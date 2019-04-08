@@ -467,6 +467,13 @@ class ImitationOptimizer(object):
                 # Intuitively, the policy gets a bonus for being less certain of its actions
                 orig_rcurr_stacked = rcurr_stacked.copy()
 
+                # POfD: combine discrimintator and env reward
+                reward_codff = 0.1
+                assert rcurr_stacked.shape == sampbatch.r.stacked.shape
+                print("rcurr shape", rcurr_stacked.shape)
+                print("sample.r.stacked shape", sampbatch.r.stacked.shape)
+                rcurr_stacked = reward_codff * rcurr_stacked + sampbatch.r.stacked
+
                 if self.policy_ent_reg is not None and self.policy_ent_reg != 0:
                     assert self.policy_ent_reg > 0
                     # XXX probably faster to compute this from sampbatch.adist instead
@@ -543,8 +550,8 @@ class ImitationOptimizer(object):
         logger.record_tabular("TimeCost", self.total_time)
         logger.dump_tabular()
 
-        self.visualizer.paint('return-average', {'x': timesteps_used, 'y': eval_avg_ret})
-        self.visualizer.draw_line('return-average', 'blue')
+        # self.visualizer.paint('return-average', {'x': timesteps_used, 'y': eval_avg_ret})
+        # self.visualizer.draw_line('return-average', 'blue')
 
 
 

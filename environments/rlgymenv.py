@@ -1,5 +1,6 @@
 import numpy as np
 import policyopt
+from environments.delay_env_wrapper import DelayRewardWrapper
 
 import gym
 from gym import spaces, envs
@@ -59,15 +60,21 @@ def _convert_space(space):
 
 
 class RLGymMDP(policyopt.MDP):
-    def __init__(self, env_name):
+    def __init__(self, env_name, reward_freq=None):
         print('Gym version:', gym.version.VERSION)
         self.env_name = env_name
+        self._reward_freq = reward_freq
 
         tmpsim = self.new_sim()
         self._obs_space = _convert_space(tmpsim.env.observation_space)
         self._action_space = _convert_space(tmpsim.env.action_space)
         self.env_spec = tmpsim.env.spec
-        self.gym_env = tmpsim.env
+
+        if self._reward_freq == None:
+            self.gym_env = tmpsim.env
+        else:
+            max_path_length = 1000
+            self.gym_env = DelayRewardWrapper(tmpsim.env, self._reward_freq, max_path_length)
 
     @property
     def obs_space(self):
