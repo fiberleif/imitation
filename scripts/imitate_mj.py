@@ -60,7 +60,7 @@ def main():
     parser.add_argument('--data_subsamp_freq', type=int, required=True)
     # MDP options
     parser.add_argument('--env_name', type=str, required=True)
-    parser.add_argument('--delay_num', type=int, default=10)
+    # parser.add_argument('--delay_num', type=int, default=10)
     parser.add_argument('--max_traj_len', type=int, default=None)
     # Policy architecture
     parser.add_argument('--policy_hidden_spec', type=str, default=SIMPLE_ARCHITECTURE)
@@ -119,7 +119,8 @@ def main():
     argstr = json.dumps(vars(args), separators=(',', ':'), indent=2)
     print(argstr)
 
-    mdp = rlgymenv.RLGymMDP(args.env_name, args.delay_num)
+    mdp = rlgymenv.RLGymMDP(args.env_name)
+
     # eval env
     eval_mdp = rlgymenv.RLGymMDP(args.env_name)
 

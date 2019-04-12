@@ -31,7 +31,6 @@ training:
       cmd: >
         python scripts/imitate_mj.py --mode ga
         --env {env}
-        --delay_num 10
         --data {dataset}
         --limit_trajs {num_trajs}
         --data_subsamp_freq {data_subsamp_freq}
