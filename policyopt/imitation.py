@@ -466,7 +466,7 @@ class ImitationOptimizer(object):
                 samp_robsfeat_stacked = self.reward_obsfeat_fn(sampbatch.obs.stacked)
                 # Reward is computed wrt current reward function
                 # TODO: normalize rewards
-                rcurr_stacked = self.reward_func.compute_reward(samp_robsfeat_stacked, sampbatch.a.stacked, sampbatch.time.stacked)
+                rcurr_stacked = self.reward_func.compute_reward(samp_robsfeat_stacked, sampbatch.time.stacked)
                 assert rcurr_stacked.shape == (samp_robsfeat_stacked.shape[0],)
 
                 # If we're regularizing the policy, add negative log probabilities to the rewards
@@ -528,7 +528,7 @@ class ImitationOptimizer(object):
 
                     # TODO: this should be a byproduct of reward fitting
                     rnew = RaggedArray(
-                        self.reward_func.compute_reward(samp_robsfeat_stacked, sampbatch.a.stacked, sampbatch.time.stacked),
+                        self.reward_func.compute_reward(samp_robsfeat_stacked, sampbatch.time.stacked),
                         lengths=sampbatch.r.lengths)
                     qnew, _ = rl.compute_qvals(rnew, self.discount)
                     vfit_print = self.value_func.fit(samp_pobsfeat.stacked, sampbatch.time.stacked, qnew.stacked)
