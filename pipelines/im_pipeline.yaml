@@ -36,7 +36,7 @@ training:
         --data_subsamp_freq {data_subsamp_freq}
         --favor_zero_expert_reward {cuts_off_on_success}
         --min_total_sa 1000
-        --max_iter 4000
+        --max_iter 2000
         --reward_include_time 0
         --reward_lr .01
         --log_dir log
