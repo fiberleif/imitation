@@ -93,11 +93,17 @@ class TransitionClassifier(nn.Model):
 
             if isinstance(self.action_space, ContinuousSpace):
                 # For a continuous action space, map observation-action pairs to a real number (reward)
-                trans_B_Doa = tensor.concatenate([obsfeat_B_Df, a_B_Da], axis=1)
-                trans_dim = self.obsfeat_space.dim + self.action_space.dim
+                # trans_B_Doa = tensor.concatenate([obsfeat_B_Df, a_B_Da], axis=1)
+                # trans_dim = self.obsfeat_space.dim + self.action_space.dim
+
+                ### Only obs ###
+                trans_B_Doa = obsfeat_B_Df
+                trans_dim = self.obsfeat_space.dim
+
                 # Normalize
                 with nn.variable_scope('inputnorm'):
-                    self.inputnorm = (nn.Standardizer if enable_inputnorm else nn.NoOpStandardizer)(self.obsfeat_space.dim + self.action_space.dim)
+                    ### change shape for only obs ###
+                    self.inputnorm = (nn.Standardizer if enable_inputnorm else nn.NoOpStandardizer)(self.obsfeat_space.dim)
                 normedtrans_B_Doa = self.inputnorm.standardize_expr(trans_B_Doa)
                 if self.include_time:
                     net_input = tensor.concatenate([normedtrans_B_Doa, scaled_t_B[:,None]], axis=1)
