@@ -284,7 +284,7 @@ class MDP(object):
         a_T_Da = np.concatenate(actions); assert a_T_Da.shape == (len(obs), self.action_space.storage_size)
         r_T = np.asarray(rewards); assert r_T.shape == (len(obs),)
         next_obs_T_Do = np.concatenate(next_obs); assert next_obs_T_Do.shape == (len(next_obs), self.obs_space.storage_size)
-        dones_T =  np.asarray(dones); assert r_T.shape == (len(obs),)
+        dones_T =  np.asarray(dones); assert dones_T.shape == (len(obs),)
 
         return Trajectory(obs_T_Do, obsfeat_T_Df, adist_T_Pa, a_T_Da, r_T, next_obs_T_Do, dones_T)
 
