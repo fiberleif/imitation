@@ -212,6 +212,7 @@ def phase0_sampletrajs(spec, specfilename):
         print 'len: {} +/- {}'.format(lengths.mean(), lengths.std())
         print 'ent: {}'.format(ent)
         print trajbatch.dones.stacked.shape
+        print trajbatch.r.padded(fill=0.).shape
 
         np.savez(taskname2outfile[task['name']], obs=trajbatch.obs.padded(fill=0.), acs=trajbatch.a.padded(fill=0.),
                  rews=trajbatch.r.padded(fill=0.), next_obs=trajbatch.next_obs.padded(fill=0.), dones=trajbatch.dones.stacked,
