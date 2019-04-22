@@ -215,7 +215,7 @@ def phase0_sampletrajs(spec, specfilename):
         print trajbatch.r.padded(fill=0.).shape
 
         np.savez(taskname2outfile[task['name']], obs=trajbatch.obs.padded(fill=0.), acs=trajbatch.a.padded(fill=0.),
-                 rews=trajbatch.r.padded(fill=0.), next_obs=trajbatch.next_obs.padded(fill=0.), dones=trajbatch.dones.stacked,
+                 rews=trajbatch.r.padded(fill=0.), next_obs=trajbatch.next_obs.padded(fill=0.), dones=trajbatch.dones.padded(fill=0.),
                  ep_lens=np.array([len(traj) for traj in trajbatch]), ep_rets=np.array([traj.r_T.sum() for traj in trajbatch]))
         # # Save the trajs to a file
         # with h5py.File(taskname2outfile[task['name']], 'w') as f:

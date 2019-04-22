@@ -276,7 +276,7 @@ class MDP(object):
             reward, next_ob, done = sim.step(a[0,:])
             rewards.append(reward)
             next_obs.append(next_ob[None, ...].copy())
-            dones.append(done)
+            dones.append(float(done))
             if sim.done: break
         obs_T_Do = np.concatenate(obs); assert obs_T_Do.shape == (len(obs), self.obs_space.storage_size)
         obsfeat_T_Df = np.concatenate(obsfeat); assert obsfeat_T_Df.shape[0] == len(obs)
