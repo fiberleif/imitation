@@ -219,7 +219,7 @@ def phase0_sampletrajs(spec, specfilename):
                  ep_lens=np.array([len(traj) for traj in trajbatch]), ep_rets=np.array([traj.r_T.sum() for traj in trajbatch]))
 
         # Save the trajs to a file
-        with h5py.File(taskname2outfile[task['name']], 'w') as f:
+        with h5py.File(taskname2outfile[task['name']].replace("npz", "h5"), 'w') as f:
             def write(dsetname, a):
                 f.create_dataset(dsetname, data=a, compression='gzip', compression_opts=9)
             # Right-padded trajectory data
@@ -231,7 +231,6 @@ def phase0_sampletrajs(spec, specfilename):
             # # Also save args to this script
             # argstr = json.dumps(vars(args), separators=(',', ':'), indent=2)
             # f.attrs['args'] = argstr
-        util.header('Wrote {}'.format(taskname2outfile[task['name']]))
 
 
 def phase1_train(spec, specfilename):
