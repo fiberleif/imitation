@@ -165,7 +165,7 @@ def exec_saved_policy(env_name, policystr, num_trajs, deterministic, max_traj_le
         cfg=policyopt.SimConfig(
             min_num_trajs=num_trajs,
             min_total_sa=-1,
-            batch_size=None,
+            batch_size=1,
             max_traj_len=max_traj_len))
 
     return trajbatch, policy, mdp
