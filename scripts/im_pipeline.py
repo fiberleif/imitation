@@ -217,20 +217,21 @@ def phase0_sampletrajs(spec, specfilename):
         np.savez(taskname2outfile[task['name']], obs=trajbatch.obs.padded(fill=0.), acs=trajbatch.a.padded(fill=0.),
                  rews=trajbatch.r.padded(fill=0.), next_obs=trajbatch.next_obs.padded(fill=0.), dones=trajbatch.dones.padded(fill=0.),
                  ep_lens=np.array([len(traj) for traj in trajbatch]), ep_rets=np.array([traj.r_T.sum() for traj in trajbatch]))
-        # # Save the trajs to a file
-        # with h5py.File(taskname2outfile[task['name']], 'w') as f:
-        #     def write(dsetname, a):
-        #         f.create_dataset(dsetname, data=a, compression='gzip', compression_opts=9)
-        #     # Right-padded trajectory data
-        #     write('obs_B_T_Do', trajbatch.obs.padded(fill=0.))
-        #     write('a_B_T_Da', trajbatch.a.padded(fill=0.))
-        #     write('r_B_T', trajbatch.r.padded(fill=0.))
-        #     # Trajectory lengths
-        #     write('len_B', np.array([len(traj) for traj in trajbatch], dtype=np.int32))
-        #     # # Also save args to this script
-        #     # argstr = json.dumps(vars(args), separators=(',', ':'), indent=2)
-        #     # f.attrs['args'] = argstr
-        # util.header('Wrote {}'.format(taskname2outfile[task['name']]))
+
+        # Save the trajs to a file
+        with h5py.File(taskname2outfile[task['name']], 'w') as f:
+            def write(dsetname, a):
+                f.create_dataset(dsetname, data=a, compression='gzip', compression_opts=9)
+            # Right-padded trajectory data
+            write('obs_B_T_Do', trajbatch.obs.padded(fill=0.))
+            write('a_B_T_Da', trajbatch.a.padded(fill=0.))
+            write('r_B_T', trajbatch.r.padded(fill=0.))
+            # Trajectory lengths
+            write('len_B', np.array([len(traj) for traj in trajbatch], dtype=np.int32))
+            # # Also save args to this script
+            # argstr = json.dumps(vars(args), separators=(',', ':'), indent=2)
+            # f.attrs['args'] = argstr
+        util.header('Wrote {}'.format(taskname2outfile[task['name']]))
 
 
 def phase1_train(spec, specfilename):
