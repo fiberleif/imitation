@@ -7,13 +7,18 @@ Generative Adversarial Imitation Learning
 Jonathan Ho and Stefano Ermon
 -----------------------------------------
 
-Contains an implementation of Trust Region Policy Optimization (Schulman et al., 2015).
-
 Dependencies:
 
 * OpenAI Gym >= 0.1.0, mujoco_py >= 0.4.0
 * numpy >= 1.10.4, scipy >= 0.17.0, theano >= 0.8.2
 * h5py, pytables, pandas, matplotlib
+
+Collect expert demonstrations:
+
+``
+sh run.sh and sh run_humanoid.sh
+``
+Then we can obtain them under the generated "imitation_runs" subdirectory.
 
 Provided files:
 
