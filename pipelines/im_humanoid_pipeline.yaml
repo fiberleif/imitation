@@ -1,6 +1,7 @@
 tasks:
   - name: humanoid
     env: Humanoid-v1
+    # policy: expert_policies/modern/log_humanoid_1.h5/snapshots/iter0001940
     policy: expert_policies/modern/log_humanoid_1.h5/snapshots/iter0000300
     data_subsamp_freq: 1
     cuts_off_on_success: false
