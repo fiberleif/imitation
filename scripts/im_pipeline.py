@@ -138,7 +138,7 @@ def gen_taskname2outfile(spec, assert_not_exists=False):
     util.mkdir_p(trajdir)
     for task in spec['tasks']:
         assert task['name'] not in taskname2outfile
-        fname = os.path.join(trajdir, 'trajs_{}.npz'.format(task['name']))
+        fname = os.path.join(trajdir, 'trajs_{}.h5'.format(task['name']))
         if assert_not_exists:
             assert not os.path.exists(fname), 'Traj destination {} already exists'.format(fname)
         taskname2outfile[task['name']] = fname
