@@ -2,16 +2,16 @@ tasks:
   - name: ant
     env: Ant-v1
     policy: expert_policies/modern/log_Ant-v1_0.h5/snapshots/iter0000500
-    data_subsamp_freq: 1
+    data_subsamp_freq: 20
     cuts_off_on_success: false
 
 
 training:
   full_dataset_num_trajs: 25
   #dataset_num_trajs: [4, 11, 18, 25]
-  dataset_num_trajs: [25]
+  dataset_num_trajs: [4, 25]
   deterministic_expert: false
-  runs: 5
+  runs: 1
 
   algorithms:
     # Generative adversarial imitation learning

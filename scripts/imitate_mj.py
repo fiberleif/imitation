@@ -246,28 +246,6 @@ def main():
             opt.eval()
         # if args.save_freq != 0 and i % args.save_freq == 0 and args.log is not None:
         #     log.write_snapshot(policy, i)
-        #
-        # if args.plot_freq != 0 and i % args.plot_freq == 0:
-        #     exdata_N_Doa = np.concatenate([exobs_Bstacked_Do, exa_Bstacked_Da], axis=1)
-        #     pdata_M_Doa = np.concatenate([opt.last_sampbatch.obs.stacked, opt.last_sampbatch.a.stacked], axis=1)
-        #
-        #     # Plot reward
-        #     import matplotlib.pyplot as plt
-        #     _, ax = plt.subplots()
-        #     idx1, idx2 = 0,1
-        #     range1 = (min(exdata_N_Doa[:,idx1].min(), pdata_M_Doa[:,idx1].min()), max(exdata_N_Doa[:,idx1].max(), pdata_M_Doa[:,idx1].max()))
-        #     range2 = (min(exdata_N_Doa[:,idx2].min(), pdata_M_Doa[:,idx2].min()), max(exdata_N_Doa[:,idx2].max(), pdata_M_Doa[:,idx2].max()))
-        #     reward.plot(ax, idx1, idx2, range1, range2, n=100)
-        #
-        #     # Plot expert data
-        #     ax.scatter(exdata_N_Doa[:,idx1], exdata_N_Doa[:,idx2], color='blue', s=1, label='expert')
-        #
-        #     # Plot policy samples
-        #     ax.scatter(pdata_M_Doa[:,idx1], pdata_M_Doa[:,idx2], color='red', s=1, label='apprentice')
-        #
-        #     ax.legend()
-        #     plt.show()
-
 
 if __name__ == '__main__':
     main()
