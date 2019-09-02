@@ -441,6 +441,7 @@ class ImitationOptimizer(object):
                 sampbatch = self.mdp.sim_mp(
                     policy_fn=lambda obsfeat_B_Df: self.policy.sample_actions(obsfeat_B_Df),
                     obsfeat_fn=self.policy_obsfeat_fn,
+                    batch_size=1,
                     cfg=self.sim_cfg)
                 samp_pobsfeat = sampbatch.obsfeat
                 self.last_sampbatch = sampbatch

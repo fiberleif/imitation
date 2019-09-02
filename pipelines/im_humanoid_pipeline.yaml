@@ -9,7 +9,7 @@ tasks:
 
 training:
   full_dataset_num_trajs: 240
-  dataset_num_trajs: [80, 240]
+  dataset_num_trajs: [80]
   deterministic_expert: false
   runs: 1
 
