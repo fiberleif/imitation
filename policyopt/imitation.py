@@ -527,9 +527,9 @@ class ImitationOptimizer(object):
         self.total_time += t_all.dt
         self.curr_iter += 1
 
-        logger.info("iter: {}".format(self.curr_iter))
-        logger.info("trueret: {}".format(sampbatch.r.padded(fill=0.).sum(axis=1).mean()))
-        logger.info("avglen: {}".format(int(np.mean([len(traj) for traj in sampbatch]))))
+        print("iter: {}".format(self.curr_iter))
+        print("trueret: {}".format(sampbatch.r.padded(fill=0.).sum(axis=1).mean()))
+        print("avglen: {}".format(int(np.mean([len(traj) for traj in sampbatch]))))
 
     def eval(self):
         sampbatch = self.eval_mdp.sim_mp(
