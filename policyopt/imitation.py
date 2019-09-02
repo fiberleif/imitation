@@ -543,8 +543,8 @@ class ImitationOptimizer(object):
         logger.record_tabular("TimeCost", self.total_time)
         logger.dump_tabular()
 
-        self.visualizer.paint('return-average', {'x': timesteps_used, 'y': eval_avg_ret})
-        self.visualizer.draw_line('return-average', 'blue')
+        # self.visualizer.paint('return-average', {'x': timesteps_used, 'y': eval_avg_ret})
+        # self.visualizer.draw_line('return-average', 'blue')
 
 
 

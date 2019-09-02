@@ -107,9 +107,9 @@ def main():
     logger.configure(dir=log_dir)
 
     # configure visualize
-    visualizer = VisdomVisualizer('guoqing-GAIL-theano-25-stochastic', args.env_name + "-traj-" + str(args.limit_trajs) + "-batch-" +
-                                  str(args.min_total_sa) + "-run-" + str(args.run))
-    visualizer.initialize('return-average', 'blue')
+    # visualizer = VisdomVisualizer('guoqing-GAIL-theano-25-stochastic', args.env_name + "-traj-" + str(args.limit_trajs) + "-batch-" +
+    #                               str(args.min_total_sa) + "-run-" + str(args.run))
+    # visualizer.initialize('return-average', 'blue')
 
     # Initialize the MDP
     if args.tiny_policy:
@@ -231,7 +231,7 @@ def main():
             ex_obs=exobs_Bstacked_Do,
             ex_a=exa_Bstacked_Da,
             ex_t=ext_Bstacked,
-            visualizer=visualizer)
+            visualizer=None)
 
     # Set observation normalization
     if args.obsnorm_mode == 'expertdata':
