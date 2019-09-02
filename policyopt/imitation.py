@@ -520,10 +520,11 @@ class ImitationOptimizer(object):
         fields = [
             ('iter', self.curr_iter, int),
             ('trueret', sampbatch.r.padded(fill=0.).sum(axis=1).mean(), float), # average return for this batch of trajectories
+            ('nsa', sum(len(traj) for traj in sampbatch), int),
             ('iret', rcurr.padded(fill=0.).sum(axis=1).mean(), float), # average return on imitation reward
             ('avglen', int(np.mean([len(traj) for traj in sampbatch])), int), # average traj length
             ('ntrajs', self.total_num_trajs, int), # total number of trajs sampled over the course of training
-            ('nsa', self.total_num_sa, int), # total number of state-action pairs sampled over the course of training
+            ('total_nsa', self.total_num_sa, int), # total number of state-action pairs sampled over the course of training
             ('ent', self.policy._compute_actiondist_entropy(sampbatch.adist.stacked).mean(), float), # entropy of action distributions
             ('vf_r2', vfunc_r2, float),
             ('tdvf_r2', simplev_r2, float),
