@@ -103,7 +103,9 @@ def main():
     args = parser.parse_args()
 
     # configure log
-    log_dir = os.path.join(args.log_dir, args.env_name, "batch_size_" + str(args.min_total_sa), "seed_" + str(args.run))
+    log_dir = os.path.join(args.log_dir, args.env_name, "data_subsamp_freq_" + str(args.data_subsamp_freq),
+                           "limit_trajs_" + str(args.limit_trajs) + "batch_size_" + str(args.min_total_sa),
+                           "seed_" + str(args.run))
     logger.configure(dir=log_dir)
 
     # configure visualize
@@ -246,6 +248,7 @@ def main():
             opt.eval()
         # if args.save_freq != 0 and i % args.save_freq == 0 and args.log is not None:
         #     log.write_snapshot(policy, i)
+
 
 if __name__ == '__main__':
     main()
