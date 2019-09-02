@@ -104,7 +104,7 @@ def main():
 
     # configure log
     log_dir = os.path.join(args.log_dir, args.env_name, "data_subsamp_freq_" + str(args.data_subsamp_freq),
-                           "limit_trajs_" + str(args.limit_trajs) + "batch_size_" + str(args.min_total_sa),
+                           "limit_trajs_" + str(args.limit_trajs), "batch_size_" + str(args.min_total_sa),
                            "seed_" + str(args.run))
     logger.configure(dir=log_dir)
 
