@@ -392,7 +392,6 @@ class LinearReward(object):
             self.w /= l2 + 1e-8
             return [('l2', l2, float)]
 
-
     def compute_reward(self, obsfeat_B_Do, a_B_Da, t_B):
         feat_B_Df = self._featurize(obsfeat_B_Do, a_B_Da, t_B)
         r_B = (feat_B_Df[:,self.widx] if self.simplex else feat_B_Df.dot(self.w)) / float(feat_B_Df.shape[1])
@@ -490,12 +489,20 @@ class ImitationOptimizer(object):
             # Take a step
             # print 'Fitting policy'
             with util.Timer() as t_step:
+                # Use demonstrated state information.
                 params0_P = self.policy.get_params()
                 step_print = self.step_func(
                     self.policy, params0_P,
                     samp_pobsfeat.stacked, sampbatch.a.stacked, sampbatch.adist.stacked,
                     advantages.stacked)
                 self.policy.update_obsnorm(samp_pobsfeat.stacked)
+
+                # Use demonstrated state-action conditional information.
+                inds = np.random.choice(self.ex_robsfeat.shape[0], size=samp_pobsfeat.stacked.shape[0])
+                batch_obsfeat_B_Do = self.ex_robsfeat[inds,:]
+                batch_a_B_Da = self.ex_a[inds,:]
+                # Take step
+                bclone_loss = self.policy.step_bclone(batch_obsfeat_B_Do, batch_a_B_Da, 1e-3)
 
             # Fit reward function
             # print 'Fitting reward'
@@ -536,6 +543,7 @@ class ImitationOptimizer(object):
         print("trueret: {}".format(sampbatch.r.padded(fill=0.).sum(axis=1).mean()))
         print("avglen: {}".format(int(np.mean([len(traj) for traj in sampbatch]))))
         print("nsa: {}".format(sum(len(traj) for traj in sampbatch)))
+        print("bc_loss: {}".format(bclone_loss))
         print("---------------")
 
     def eval(self):
