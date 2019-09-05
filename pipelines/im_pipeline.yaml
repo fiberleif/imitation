@@ -21,9 +21,9 @@ tasks:
 training:
   full_dataset_num_trajs: 25
   #dataset_num_trajs: [4, 11, 18, 25]
-  dataset_num_trajs: [4, 25]
+  dataset_num_trajs: [25]
   deterministic_expert: false
-  runs: 1
+  runs: 3
 
   algorithms:
     # Generative adversarial imitation learning
@@ -35,8 +35,8 @@ training:
         --limit_trajs {num_trajs}
         --data_subsamp_freq {data_subsamp_freq}
         --favor_zero_expert_reward {cuts_off_on_success}
-        --min_total_sa 1000
-        --max_iter 2000
+        --min_total_sa 8000
+        --max_iter 1000
         --reward_include_time 0
         --reward_lr .01
         --log_dir log
