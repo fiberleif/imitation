@@ -139,7 +139,6 @@ class TransitionClassifier(nn.Model):
                         initializer=np.zeros((net.output_shape[0], self.action_space.size)))
                 scores_B = out_layer.output[tensor.arange(normedobs_B_Df.shape[0]), a_B_Da[:,0]]
 
-
         if self.include_time:
             self._compute_scores = thutil.function([obsfeat_B_Df, t_B], scores_B) # scores define the conditional distribution p(label | (state,action))
         else:
@@ -180,7 +179,7 @@ class TransitionClassifier(nn.Model):
             adamstep_without_time = thutil.function(
                 [obsfeat_B_Df, labels_B, weights_B], loss,
                 updates=thutil.adam(loss, param_vars, lr=adam_lr))
-            self._adamstep = lambda _obsfeat_B_Df, _t_B, _labels_B, _weights_B: adamstep_without_time(_obsfeat_B_Df, _a_B_Da, _labels_B, _weights_B)
+            self._adamstep = lambda _obsfeat_B_Df, _t_B, _labels_B, _weights_B: adamstep_without_time(_obsfeat_B_Df, _labels_B, _weights_B)
 
     @property
     def varscope(self): return self.__varscope
