@@ -238,7 +238,7 @@ def main():
     # Set observation normalization
     if args.obsnorm_mode == 'expertdata':
         policy.update_obsnorm(exobs_Bstacked_Do)
-        if reward is not None: reward.update_inputnorm(opt.reward_obsfeat_fn(exobs_Bstacked_Do), exa_Bstacked_Da)
+        if reward is not None: reward.update_inputnorm(opt.reward_obsfeat_fn(exobs_Bstacked_Do))
         if vf is not None: vf.update_obsnorm(opt.policy_obsfeat_fn(exobs_Bstacked_Do))
 
     # Run optimizer
