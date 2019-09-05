@@ -530,6 +530,8 @@ class ImitationOptimizer(object):
         print("iter: {}".format(self.curr_iter))
         print("trueret: {}".format(sampbatch.r.padded(fill=0.).sum(axis=1).mean()))
         print("avglen: {}".format(int(np.mean([len(traj) for traj in sampbatch]))))
+        print("nsa: {}".format(sum(len(traj) for traj in sampbatch)))
+        print("---------------")
 
     def eval(self):
         sampbatch = self.eval_mdp.sim_mp(
