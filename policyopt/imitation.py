@@ -29,7 +29,7 @@ class BehavioralCloningOptimizer(object):
         self.eval_cfg = policyopt.SimConfig(
             min_num_trajs=10, min_total_sa=-1,
             batch_size=1, max_traj_len=max_traj_len)
-        
+
         self.total_time = 0.
         self.curr_iter = 0
 

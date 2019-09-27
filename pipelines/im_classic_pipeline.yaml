@@ -55,7 +55,7 @@ training:
         --sim_batch_size 1
         --reward_include_time 0
         --log_dir log
-        --log_freq 100
+        --log_freq 10
         --run {run}
 
 options:
