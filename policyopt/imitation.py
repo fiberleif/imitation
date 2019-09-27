@@ -22,10 +22,14 @@ class BehavioralCloningOptimizer(object):
         self.train_ex_obsfeat, self.train_ex_a = self.obsfeat_fn(ex_obs[train_inds]), ex_a[train_inds]
         self.val_ex_obsfeat, self.val_ex_a = self.obsfeat_fn(ex_obs[val_inds]), ex_a[val_inds]
 
-        # self.eval_sim_cfg = eval_sim_cfg
+        # eval_sim_cfg
+        max_traj_len = None
+        max_traj_len = min(mdp.env_spec.timestep_limit,
+                           max_traj_len) if max_traj_len is not None else mdp.env_spec.timestep_limit
         self.eval_cfg = policyopt.SimConfig(
             min_num_trajs=10, min_total_sa=-1,
-            batch_size=1, max_traj_len=1000)
+            batch_size=1, max_traj_len=max_traj_len)
+        
         self.total_time = 0.
         self.curr_iter = 0
 
@@ -405,9 +409,15 @@ class ImitationOptimizer(object):
     def __init__(self, mdp, eval_mdp, discount, lam, policy, sim_cfg, step_func, reward_func, value_func, policy_obsfeat_fn, reward_obsfeat_fn, policy_ent_reg, ex_obs, ex_a, ex_t):
         self.mdp, self.eval_mdp, self.discount, self.lam, self.policy = mdp, eval_mdp, discount, lam, policy
         self.sim_cfg = sim_cfg
+
+        # eval_cfg
+        max_traj_len = None
+        max_traj_len = min(mdp.env_spec.timestep_limit,
+                           max_traj_len) if max_traj_len is not None else mdp.env_spec.timestep_limit
         self.eval_cfg = policyopt.SimConfig(
             min_num_trajs=10, min_total_sa=-1,
-            batch_size=1, max_traj_len=1000)
+            batch_size=1, max_traj_len=max_traj_len)
+
         self.step_func = step_func
         self.reward_func = reward_func
         self.value_func = value_func
