@@ -25,7 +25,7 @@ class RLGymSim(policyopt.Simulation):
             assert action.ndim == 1 and action.dtype == np.float64
 
         self.curr_obs, reward, self.is_done, _ = self.env.step(action)
-        return reward, self.curr_obs, self.is_done
+        return reward
 
     @property
     def obs(self):

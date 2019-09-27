@@ -138,7 +138,7 @@ def gen_taskname2outfile(spec, assert_not_exists=False):
     util.mkdir_p(trajdir)
     for task in spec['tasks']:
         assert task['name'] not in taskname2outfile
-        fname = os.path.join(trajdir, 'trajs_{}.npz'.format(task['name']))
+        fname = os.path.join(trajdir, 'trajs_{}.h5'.format(task['name']))
         if assert_not_exists:
             assert not os.path.exists(fname), 'Traj destination {} already exists'.format(fname)
         taskname2outfile[task['name']] = fname
@@ -165,7 +165,7 @@ def exec_saved_policy(env_name, policystr, num_trajs, deterministic, max_traj_le
         cfg=policyopt.SimConfig(
             min_num_trajs=num_trajs,
             min_total_sa=-1,
-            batch_size=1,
+            batch_size=None,
             max_traj_len=max_traj_len))
 
     return trajbatch, policy, mdp
@@ -211,15 +211,9 @@ def phase0_sampletrajs(spec, specfilename):
         print 'avgr: {}'.format(avgr)
         print 'len: {} +/- {}'.format(lengths.mean(), lengths.std())
         print 'ent: {}'.format(ent)
-        print trajbatch.dones.padded(fill=0.).shape
-        print trajbatch.r.padded(fill=0.).shape
-
-        np.savez(taskname2outfile[task['name']], obs=trajbatch.obs.padded(fill=0.), acs=trajbatch.a.padded(fill=0.),
-                 rews=trajbatch.r.padded(fill=0.), next_obs=trajbatch.next_obs.padded(fill=0.), dones=trajbatch.dones.padded(fill=0.),
-                 ep_lens=np.array([len(traj) for traj in trajbatch]), ep_rets=np.array([traj.r_T.sum() for traj in trajbatch]))
 
         # Save the trajs to a file
-        with h5py.File(taskname2outfile[task['name']].replace("npz", "h5"), 'w') as f:
+        with h5py.File(taskname2outfile[task['name']], 'w') as f:
             def write(dsetname, a):
                 f.create_dataset(dsetname, data=a, compression='gzip', compression_opts=9)
             # Right-padded trajectory data
@@ -231,6 +225,7 @@ def phase0_sampletrajs(spec, specfilename):
             # # Also save args to this script
             # argstr = json.dumps(vars(args), separators=(',', ':'), indent=2)
             # f.attrs['args'] = argstr
+        util.header('Wrote {}'.format(taskname2outfile[task['name']]))
 
 
 def phase1_train(spec, specfilename):
@@ -268,12 +263,12 @@ def phase1_train(spec, specfilename):
                     })
 
     pbsopts = spec['options']['pbs']
-    # runpbs(
-    #     cmd_templates, outputfilenames, argdicts,
-    #     jobname=pbsopts['jobname'], queue=pbsopts['queue'], nodes=1, ppn=pbsopts['ppn'],
-    #     job_range=pbsopts['range'] if 'range' in pbsopts else None,
-    #     qsub_script_copy=os.path.join(checkptdir, 'qsub_script.sh')
-    # )
+    #runpbs(
+    #    cmd_templates, outputfilenames, argdicts,
+    #    jobname=pbsopts['jobname'], queue=pbsopts['queue'], nodes=1, ppn=pbsopts['ppn'],
+    #    job_range=pbsopts['range'] if 'range' in pbsopts else None,
+    #    qsub_script_copy=os.path.join(checkptdir, 'qsub_script.sh')
+    #)
     import subprocess
     all_commands = [x.format(**y) for (x,y) in zip(cmd_templates,argdicts)]
     for command in all_commands:

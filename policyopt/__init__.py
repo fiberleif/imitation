@@ -34,9 +34,8 @@ class ContinuousSpace(Space):
 
 
 class Trajectory(object):
-    __slots__ = ('obs_T_Do', 'obsfeat_T_Df', 'adist_T_Pa', 'a_T_Da', 'r_T', 'next_obs_T_Do', 'dones_T')
-
-    def __init__(self, obs_T_Do, obsfeat_T_Df, adist_T_Pa, a_T_Da, r_T, next_obs_T_Do, dones_T):
+    __slots__ = ('obs_T_Do', 'obsfeat_T_Df', 'adist_T_Pa', 'a_T_Da', 'r_T')
+    def __init__(self, obs_T_Do, obsfeat_T_Df, adist_T_Pa, a_T_Da, r_T):
         assert (
             obs_T_Do.ndim == 2 and obsfeat_T_Df.ndim == 2 and adist_T_Pa.ndim == 2 and a_T_Da.ndim == 2 and r_T.ndim == 1 and
             obs_T_Do.shape[0] == obsfeat_T_Df.shape[0] == adist_T_Pa.shape[0] == a_T_Da.shape[0] == r_T.shape[0]
@@ -46,8 +45,6 @@ class Trajectory(object):
         self.adist_T_Pa = adist_T_Pa
         self.a_T_Da = a_T_Da
         self.r_T = r_T
-        self.next_obs_T_Do = next_obs_T_Do
-        self.dones_T = dones_T
 
     def __len__(self):
         return self.obs_T_Do.shape[0]
@@ -58,8 +55,6 @@ class Trajectory(object):
         grp.create_dataset('adist_T_Pa', data=self.adist_T_Pa, **kwargs)
         grp.create_dataset('a_T_Da', data=self.a_T_Da, **kwargs)
         grp.create_dataset('r_T', data=self.r_T, **kwargs)
-        grp.create_dataset('next_obs_T_Do', data=self.next_obs_T_Do, **kwargs)
-        grp.create_dataset('dones_T', data=self.dones_T, **kwargs)
 
     @classmethod
     def LoadH5(cls, grp, obsfeat_fn):
@@ -68,8 +63,7 @@ class Trajectory(object):
         '''
         obs_T_Do = grp['obs_T_Do'][...]
         obsfeat_T_Df = obsfeat_fn(obs_T_Do) if obsfeat_fn is not None else obs_T_Do.copy()
-        return cls(obs_T_Do, obsfeat_T_Df, grp['adist_T_Pa'][...], grp['a_T_Da'][...], grp['r_T'][...],
-                   grp['next_obs_T_Do'][...], grp['dones_T'][...])
+        return cls(obs_T_Do, obsfeat_T_Df, grp['adist_T_Pa'][...], grp['a_T_Da'][...], grp['r_T'][...])
 
 
 # Utilities for dealing with batches of trajectories with different lengths
@@ -125,9 +119,8 @@ class RaggedArray(object):
 
 
 class TrajBatch(object):
-    def __init__(self, trajs, obs, obsfeat, adist, a, r, next_obs, dones, time):
-        self.trajs, self.obs, self.obsfeat, self.adist, self.a, self.r, self.next_obs, self.dones,\
-        self.time = trajs, obs, obsfeat, adist, a, r, next_obs, dones, time
+    def __init__(self, trajs, obs, obsfeat, adist, a, r, time):
+        self.trajs, self.obs, self.obsfeat, self.adist, self.a, self.r, self.time = trajs, obs, obsfeat, adist, a, r, time
 
     @classmethod
     def FromTrajs(cls, trajs):
@@ -137,10 +130,8 @@ class TrajBatch(object):
         adist = RaggedArray([t.adist_T_Pa for t in trajs])
         a = RaggedArray([t.a_T_Da for t in trajs])
         r = RaggedArray([t.r_T for t in trajs])
-        next_obs = RaggedArray([t.next_obs_T_Do for t in trajs])
-        dones = RaggedArray([t.dones_T for t in trajs])
         time = RaggedArray([np.arange(len(t), dtype=float) for t in trajs])
-        return cls(trajs, obs, obsfeat, adist, a, r, next_obs, dones, time)
+        return cls(trajs, obs, obsfeat, adist, a, r, time)
 
     def with_replaced_reward(self, new_r):
         new_trajs = [Trajectory(traj.obs_T_Do, traj.obsfeat_T_Df, traj.adist_T_Pa, traj.a_T_Da, traj_new_r) for traj, traj_new_r in util.safezip(self.trajs, new_r)]
@@ -266,27 +257,21 @@ class MDP(object):
     def sim_single(self, policy_fn, obsfeat_fn, max_traj_len, init_state=None):
         '''Simulate a single trajectory'''
         sim = self.new_sim(init_state=init_state)
-        obs, obsfeat, actions, actiondists, rewards, next_obs, dones = [], [], [], [], [], [], []
+        obs, obsfeat, actions, actiondists, rewards = [], [], [], [], []
         for _ in xrange(max_traj_len):
             obs.append(sim.obs[None,...].copy())
             obsfeat.append(obsfeat_fn(obs[-1]))
             a, adist = policy_fn(obsfeat[-1])
             actions.append(a)
             actiondists.append(adist)
-            reward, next_ob, done = sim.step(a[0,:])
-            rewards.append(reward)
-            next_obs.append(next_ob[None, ...].copy())
-            dones.append(float(done))
+            rewards.append(sim.step(a[0,:]))
             if sim.done: break
         obs_T_Do = np.concatenate(obs); assert obs_T_Do.shape == (len(obs), self.obs_space.storage_size)
         obsfeat_T_Df = np.concatenate(obsfeat); assert obsfeat_T_Df.shape[0] == len(obs)
         adist_T_Pa = np.concatenate(actiondists); assert adist_T_Pa.ndim == 2 and adist_T_Pa.shape[0] == len(obs)
         a_T_Da = np.concatenate(actions); assert a_T_Da.shape == (len(obs), self.action_space.storage_size)
         r_T = np.asarray(rewards); assert r_T.shape == (len(obs),)
-        next_obs_T_Do = np.concatenate(next_obs); assert next_obs_T_Do.shape == (len(next_obs), self.obs_space.storage_size)
-        dones_T =  np.asarray(dones); assert dones_T.shape == (len(obs),)
-
-        return Trajectory(obs_T_Do, obsfeat_T_Df, adist_T_Pa, a_T_Da, r_T, next_obs_T_Do, dones_T)
+        return Trajectory(obs_T_Do, obsfeat_T_Df, adist_T_Pa, a_T_Da, r_T)
 
     # @profile
     def sim_multi(self, policy_fn, obsfeat_fn, cfg, num_threads=None, no_reward=False):
