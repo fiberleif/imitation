@@ -36,9 +36,10 @@ training:
         --limit_trajs {num_trajs}
         --data_subsamp_freq {data_subsamp_freq}
         --max_iter 1001
-        --bclone_eval_freq 100
         --sim_batch_size 1
-        --log {out}
+        --log_dir log
+        --log_freq 100
+        --run {run}
 
     # Generative adversarial (neural network adversary)
     - name: ga
@@ -53,8 +54,9 @@ training:
         --max_iter 301
         --sim_batch_size 1
         --reward_include_time 0
-        --log {out}
-
+        --log_dir log
+        --log_freq 100
+        --run {run}
 
 options:
   storagedir: imitation_runs/classic

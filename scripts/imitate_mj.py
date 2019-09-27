@@ -2,8 +2,9 @@ import argparse, h5py, json
 import numpy as np
 from environments import rlgymenv
 import policyopt
+import policyopt.logger as logger
 from policyopt import imitation, nn, rl, util
-
+import os
 
 MODES = ('bclone', 'ga')
 OBSNORM_MODES = ('none', 'expertdata', 'online')
@@ -68,7 +69,7 @@ def main():
     parser.add_argument('--bclone_batch_size', type=int, default=128)
     # parser.add_argument('--bclone_eval_nsa', type=int, default=128*100)
     parser.add_argument('--bclone_eval_ntrajs', type=int, default=20)
-    parser.add_argument('--bclone_eval_freq', type=int, default=1000)
+    # parser.add_argument('--bclone_eval_freq', type=int, default=1000)
     parser.add_argument('--bclone_train_frac', type=float, default=.7)
     # Imitation optimizer
     parser.add_argument('--discount', type=float, default=.995)
@@ -87,16 +88,26 @@ def main():
     parser.add_argument('--reward_steps', type=int, default=1)
     parser.add_argument('--reward_ent_reg_weight', type=float, default=.001)
     parser.add_argument('--reward_include_time', type=int, default=0)
-    parser.add_argument('--sim_batch_size', type=int, default=None)
+    parser.add_argument('--sim_batch_size', type=int, default=1)
     parser.add_argument('--min_total_sa', type=int, default=50000)
     parser.add_argument('--favor_zero_expert_reward', type=int, default=0)
     # Saving stuff
-    parser.add_argument('--print_freq', type=int, default=1)
-    parser.add_argument('--save_freq', type=int, default=20)
-    parser.add_argument('--plot_freq', type=int, default=0)
-    parser.add_argument('--log', type=str, required=False)
-
+    parser.add_argument('--log_dir', type=str, required=False)
+    parser.add_argument('--log_freq', type=int, default=20)
+    parser.add_argument('--run', type=int, default=0)
     args = parser.parse_args()
+
+    # configure log
+    if args.mode == 'bclone':
+        log_dir = os.path.join(args.log_dir, args.mode, args.env_name, "data_subsamp_freq_" + str(args.data_subsamp_freq),
+                               "limit_trajs_" + str(args.limit_trajs), "seed_" + str(args.run))
+    elif args.mode == 'ga':
+        log_dir = os.path.join(args.log_dir, args.mode, args.env_name, "data_subsamp_freq_" + str(args.data_subsamp_freq),
+                               "limit_trajs_" + str(args.limit_trajs), "batch_size_" + str(args.min_total_sa),
+                               "seed_" + str(args.run))
+    else:
+        raise NotImplementedError
+    logger.configure(dir=log_dir)
 
     # Initialize the MDP
     if args.tiny_policy:
@@ -106,6 +117,8 @@ def main():
     print(argstr)
 
     mdp = rlgymenv.RLGymMDP(args.env_name)
+    # eval env
+    eval_mdp = rlgymenv.RLGymMDP(args.env_name)
     util.header('MDP observation space, action space sizes: %d, %d\n' % (mdp.obs_space.dim, mdp.action_space.storage_size))
 
     # Initialize the policy
@@ -140,21 +153,13 @@ def main():
     print 'Max traj len:', max_traj_len
 
     if args.mode == 'bclone':
-        # For behavioral cloning, only print output when evaluating
-        args.print_freq = args.bclone_eval_freq
-        args.save_freq = args.bclone_eval_freq
-
         reward, vf = None, None
         opt = imitation.BehavioralCloningOptimizer(
-            mdp, policy,
+            mdp, eval_mdp, policy,
             lr=args.bclone_lr,
             batch_size=args.bclone_batch_size,
             obsfeat_fn=lambda o:o,
             ex_obs=exobs_Bstacked_Do, ex_a=exa_Bstacked_Da,
-            eval_sim_cfg=policyopt.SimConfig(
-                min_num_trajs=args.bclone_eval_ntrajs, min_total_sa=-1,
-                batch_size=args.sim_batch_size, max_traj_len=max_traj_len),
-            eval_freq=args.bclone_eval_freq,
             train_frac=args.bclone_train_frac)
 
     elif args.mode == 'ga':
@@ -199,6 +204,7 @@ def main():
 
         opt = imitation.ImitationOptimizer(
             mdp=mdp,
+            eval_mdp=eval_mdp,
             discount=args.discount,
             lam=args.lam,
             policy=policy,
@@ -222,33 +228,10 @@ def main():
         if vf is not None: vf.update_obsnorm(opt.policy_obsfeat_fn(exobs_Bstacked_Do))
 
     # Run optimizer
-    log = nn.TrainingLog(args.log, [('args', argstr)])
     for i in xrange(args.max_iter):
-        iter_info = opt.step()
-        log.write(iter_info, print_header=i % (20*args.print_freq) == 0, display=i % args.print_freq == 0)
-        if args.save_freq != 0 and i % args.save_freq == 0 and args.log is not None:
-            log.write_snapshot(policy, i)
-
-        if args.plot_freq != 0 and i % args.plot_freq == 0:
-            exdata_N_Doa = np.concatenate([exobs_Bstacked_Do, exa_Bstacked_Da], axis=1)
-            pdata_M_Doa = np.concatenate([opt.last_sampbatch.obs.stacked, opt.last_sampbatch.a.stacked], axis=1)
-
-            # Plot reward
-            import matplotlib.pyplot as plt
-            _, ax = plt.subplots()
-            idx1, idx2 = 0,1
-            range1 = (min(exdata_N_Doa[:,idx1].min(), pdata_M_Doa[:,idx1].min()), max(exdata_N_Doa[:,idx1].max(), pdata_M_Doa[:,idx1].max()))
-            range2 = (min(exdata_N_Doa[:,idx2].min(), pdata_M_Doa[:,idx2].min()), max(exdata_N_Doa[:,idx2].max(), pdata_M_Doa[:,idx2].max()))
-            reward.plot(ax, idx1, idx2, range1, range2, n=100)
-
-            # Plot expert data
-            ax.scatter(exdata_N_Doa[:,idx1], exdata_N_Doa[:,idx2], color='blue', s=1, label='expert')
-
-            # Plot policy samples
-            ax.scatter(pdata_M_Doa[:,idx1], pdata_M_Doa[:,idx2], color='red', s=1, label='apprentice')
-
-            ax.legend()
-            plt.show()
+        opt.step()
+        if args.log_freq != 0 and (i + 1) % args.log_freq == 0:
+            opt.eval()
 
 
 if __name__ == '__main__':

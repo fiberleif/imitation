@@ -2,13 +2,14 @@ from . import nn, rl, util, RaggedArray, ContinuousSpace, FiniteSpace, optim, th
 import numpy as np
 from contextlib import contextmanager
 import theano; from theano import tensor
-
+import policyopt
+import policyopt.logger as logger
 from scipy.optimize import fmin_l_bfgs_b
 
 
 class BehavioralCloningOptimizer(object):
-    def __init__(self, mdp, policy, lr, batch_size, obsfeat_fn, ex_obs, ex_a, eval_sim_cfg, eval_freq, train_frac):
-        self.mdp, self.policy, self.lr, self.batch_size, self.obsfeat_fn = mdp, policy, lr, batch_size, obsfeat_fn
+    def __init__(self, mdp, eval_mdp, policy, lr, batch_size, obsfeat_fn, ex_obs, ex_a, train_frac):
+        self.mdp, self.eval_mdp, self.policy, self.lr, self.batch_size, self.obsfeat_fn = mdp, eval_mdp, policy, lr, batch_size, obsfeat_fn
 
         # Randomly split data into train/val
         assert ex_obs.shape[0] == ex_a.shape[0]
@@ -21,9 +22,10 @@ class BehavioralCloningOptimizer(object):
         self.train_ex_obsfeat, self.train_ex_a = self.obsfeat_fn(ex_obs[train_inds]), ex_a[train_inds]
         self.val_ex_obsfeat, self.val_ex_a = self.obsfeat_fn(ex_obs[val_inds]), ex_a[val_inds]
 
-        self.eval_sim_cfg = eval_sim_cfg
-        self.eval_freq = eval_freq
-
+        # self.eval_sim_cfg = eval_sim_cfg
+        self.eval_cfg = policyopt.SimConfig(
+            min_num_trajs=10, min_total_sa=-1,
+            batch_size=1, max_traj_len=1000)
         self.total_time = 0.
         self.curr_iter = 0
 
@@ -36,35 +38,28 @@ class BehavioralCloningOptimizer(object):
             # Take step
             loss = self.policy.step_bclone(batch_obsfeat_B_Do, batch_a_B_Da, self.lr)
 
-            # Roll out trajectories when it's time to evaluate our policy
-            val_loss = val_acc = trueret = avgr = ent = np.nan
-            avglen = -1
-            if self.eval_freq != 0 and self.curr_iter % self.eval_freq == 0:
-                val_loss = self.policy.compute_bclone_loss(self.val_ex_obsfeat, self.val_ex_a)
-                # Evaluate validation accuracy (independent of standard deviation)
-                if isinstance(self.mdp.action_space, ContinuousSpace):
-                    val_acc = -np.square(self.policy.compute_actiondist_mean(self.val_ex_obsfeat) - self.val_ex_a).sum(axis=1).mean()
-                else:
-                    assert self.val_ex_a.shape[1] == 1
-                    # val_acc = (self.policy.sample_actions(self.val_ex_obsfeat)[1].argmax(axis=1) == self.val_ex_a[1]).mean()
-                    val_acc = -val_loss # val accuracy doesn't seem too meaningful so just use this
-
-
         # Log
         self.total_time += t_all.dt
-        fields = [
-            ('iter', self.curr_iter, int),
-            ('bcloss', loss, float), # supervised learning loss
-            ('valloss', val_loss, float), # loss on validation set
-            ('valacc', val_acc, float), # loss on validation set
-            ('trueret', trueret, float), # true average return for this batch of trajectories
-            ('avgr', avgr, float), # average reward encountered
-            ('avglen', avglen, int), # average traj length
-            ('ent', ent, float), # entropy of action distributions
-            ('ttotal', self.total_time, float), # total time
-        ]
         self.curr_iter += 1
-        return fields
+        print("iter: {}".format(self.curr_iter))
+        print("bcloss: {}".format(loss))
+        print("ttotal: {}".format(self.total_time))
+
+    def eval(self):
+        sampbatch = self.eval_mdp.sim_mp(
+            policy_fn=lambda obsfeat_B_Df: self.policy.sample_actions(obsfeat_B_Df, deterministic=True),
+            obsfeat_fn=self.obsfeat_fn,
+            cfg=self.eval_cfg)
+
+        eval_avg_ret = sampbatch.r.padded(fill=0.).sum(axis=1).mean()
+        eval_avg_length = int(np.mean([len(traj) for traj in sampbatch]))
+        timesteps_used = self.curr_iter * self.batch_size
+
+        logger.record_tabular("return-average", eval_avg_ret)
+        logger.record_tabular("length-average", eval_avg_length)
+        logger.record_tabular("total-samples", timesteps_used)
+        logger.record_tabular("TimeCost", self.total_time)
+        logger.dump_tabular()
 
 
 class TransitionClassifier(nn.Model):
@@ -130,7 +125,6 @@ class TransitionClassifier(nn.Model):
                         net.output, net.output_shape, (self.action_space.size,),
                         initializer=np.zeros((net.output_shape[0], self.action_space.size)))
                 scores_B = out_layer.output[tensor.arange(normedobs_B_Df.shape[0]), a_B_Da[:,0]]
-
 
         if self.include_time:
             self._compute_scores = thutil.function([obsfeat_B_Df, a_B_Da, t_B], scores_B) # scores define the conditional distribution p(label | (state,action))
@@ -362,10 +356,8 @@ class LinearReward(object):
         assert feat_B_Df.ndim == 2 and feat_B_Df.shape[0] == B
         return feat_B_Df
 
-
     def _compute_featexp(self, obsfeat_B_Do, a_B_Da, t_B):
         return self._featurize(obsfeat_B_Do, a_B_Da, t_B).mean(axis=0)
-
 
     def fit(self, obsfeat_B_Do, a_B_Da, t_B, _unused_exobs_Bex_Do, _unused_exa_Bex_Da, _unused_ext_Bex):
         # Ignore expert data inputs here, we'll use the one provided in the constructor.
@@ -383,7 +375,6 @@ class LinearReward(object):
             l2 = np.linalg.norm(self.w)
             self.w /= l2 + 1e-8
             return [('l2', l2, float)]
-
 
     def compute_reward(self, obsfeat_B_Do, a_B_Da, t_B):
         feat_B_Df = self._featurize(obsfeat_B_Do, a_B_Da, t_B)
@@ -411,9 +402,12 @@ class LinearReward(object):
 
 
 class ImitationOptimizer(object):
-    def __init__(self, mdp, discount, lam, policy, sim_cfg, step_func, reward_func, value_func, policy_obsfeat_fn, reward_obsfeat_fn, policy_ent_reg, ex_obs, ex_a, ex_t):
-        self.mdp, self.discount, self.lam, self.policy = mdp, discount, lam, policy
+    def __init__(self, mdp, eval_mdp, discount, lam, policy, sim_cfg, step_func, reward_func, value_func, policy_obsfeat_fn, reward_obsfeat_fn, policy_ent_reg, ex_obs, ex_a, ex_t):
+        self.mdp, self.eval_mdp, self.discount, self.lam, self.policy = mdp, eval_mdp, discount, lam, policy
         self.sim_cfg = sim_cfg
+        self.eval_cfg = policyopt.SimConfig(
+            min_num_trajs=10, min_total_sa=-1,
+            batch_size=1, max_traj_len=1000)
         self.step_func = step_func
         self.reward_func = reward_func
         self.value_func = value_func
@@ -517,27 +511,49 @@ class ImitationOptimizer(object):
         self.total_num_trajs += len(sampbatch)
         self.total_num_sa += sum(len(traj) for traj in sampbatch)
         self.total_time += t_all.dt
-        fields = [
-            ('iter', self.curr_iter, int),
-            ('trueret', sampbatch.r.padded(fill=0.).sum(axis=1).mean(), float), # average return for this batch of trajectories
-            ('iret', rcurr.padded(fill=0.).sum(axis=1).mean(), float), # average return on imitation reward
-            ('avglen', int(np.mean([len(traj) for traj in sampbatch])), int), # average traj length
-            ('ntrajs', self.total_num_trajs, int), # total number of trajs sampled over the course of training
-            ('nsa', self.total_num_sa, int), # total number of state-action pairs sampled over the course of training
-            ('ent', self.policy._compute_actiondist_entropy(sampbatch.adist.stacked).mean(), float), # entropy of action distributions
-            ('vf_r2', vfunc_r2, float),
-            ('tdvf_r2', simplev_r2, float),
-            ('dx', util.maxnorm(params0_P - self.policy.get_params()), float), # max parameter difference from last iteration
-        ] + step_print + vfit_print + rfit_print + [
-            ('avgr', rcurr_stacked.mean(), float), # average regularized reward encountered
-            ('avgunregr', orig_rcurr_stacked.mean(), float), # average unregularized reward
-            ('avgpreg', policyentbonus_B.mean(), float), # average policy regularization
-            # ('bcloss', -self.policy.compute_action_logprobs(exbatch_pobsfeat, exbatch_a).mean(), float), # negative log likelihood of expert actions
-            # ('bcloss', np.square(self.policy.compute_actiondist_mean(exbatch_pobsfeat) - exbatch_a).sum(axis=1).mean(axis=0), float),
-            ('tsamp', t_sample.dt, float), # time for sampling
-            ('tadv', t_adv.dt + t_vf_fit.dt, float), # time for advantage computation
-            ('tstep', t_step.dt, float), # time for step computation
-            ('ttotal', self.total_time, float), # total time
-        ]
+        # fields = [
+        #     ('iter', self.curr_iter, int),
+        #     ('trueret', sampbatch.r.padded(fill=0.).sum(axis=1).mean(), float), # average return for this batch of trajectories
+        #     ('iret', rcurr.padded(fill=0.).sum(axis=1).mean(), float), # average return on imitation reward
+        #     ('avglen', int(np.mean([len(traj) for traj in sampbatch])), int), # average traj length
+        #     ('ntrajs', self.total_num_trajs, int), # total number of trajs sampled over the course of training
+        #     ('nsa', self.total_num_sa, int), # total number of state-action pairs sampled over the course of training
+        #     ('ent', self.policy._compute_actiondist_entropy(sampbatch.adist.stacked).mean(), float), # entropy of action distributions
+        #     ('vf_r2', vfunc_r2, float),
+        #     ('tdvf_r2', simplev_r2, float),
+        #     ('dx', util.maxnorm(params0_P - self.policy.get_params()), float), # max parameter difference from last iteration
+        # ] + step_print + vfit_print + rfit_print + [
+        #     ('avgr', rcurr_stacked.mean(), float), # average regularized reward encountered
+        #     ('avgunregr', orig_rcurr_stacked.mean(), float), # average unregularized reward
+        #     ('avgpreg', policyentbonus_B.mean(), float), # average policy regularization
+        #     # ('bcloss', -self.policy.compute_action_logprobs(exbatch_pobsfeat, exbatch_a).mean(), float), # negative log likelihood of expert actions
+        #     # ('bcloss', np.square(self.policy.compute_actiondist_mean(exbatch_pobsfeat) - exbatch_a).sum(axis=1).mean(axis=0), float),
+        #     ('tsamp', t_sample.dt, float), # time for sampling
+        #     ('tadv', t_adv.dt + t_vf_fit.dt, float), # time for advantage computation
+        #     ('tstep', t_step.dt, float), # time for step computation
+        #     ('ttotal', self.total_time, float), # total time
+        # ]
         self.curr_iter += 1
-        return fields
+        # return fields
+
+        print("iter: {}".format(self.curr_iter))
+        print("trueret: {}".format(sampbatch.r.padded(fill=0.).sum(axis=1).mean()))
+        print("avglen: {}".format(int(np.mean([len(traj) for traj in sampbatch]))))
+        print("nsa: {}".format(sum(len(traj) for traj in sampbatch)))
+        print("---------------")
+
+    def eval(self):
+        sampbatch = self.eval_mdp.sim_mp(
+            policy_fn=lambda obsfeat_B_Df: self.policy.sample_actions(obsfeat_B_Df, deterministic=True),
+            obsfeat_fn=self.policy_obsfeat_fn,
+            cfg=self.eval_cfg)
+
+        eval_avg_ret = sampbatch.r.padded(fill=0.).sum(axis=1).mean()
+        eval_avg_length = int(np.mean([len(traj) for traj in sampbatch]))
+        timesteps_used = self.curr_iter * self.sim_cfg.min_total_sa
+
+        logger.record_tabular("return-average", eval_avg_ret)
+        logger.record_tabular("length-average", eval_avg_length)
+        logger.record_tabular("total-samples", timesteps_used)
+        logger.record_tabular("TimeCost", self.total_time)
+        logger.dump_tabular()
