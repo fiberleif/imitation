@@ -259,7 +259,7 @@ def phase1_train(spec, specfilename):
                         'num_trajs': num_trajs,
                         'cuts_off_on_success': int(task['cuts_off_on_success']),
                         'data_subsamp_freq': task['data_subsamp_freq'],
-                        'out': os.path.join(checkptdir, strid + '.h5'),
+                        'run': run,
                     })
 
     pbsopts = spec['options']['pbs']
