@@ -35,10 +35,10 @@ training:
         --data {dataset}
         --limit_trajs {num_trajs}
         --data_subsamp_freq {data_subsamp_freq}
-        --max_iter 1001
+        --max_iter 20001
         --sim_batch_size 1
         --log_dir log
-        --log_freq 100
+        --log_freq 1000
         --run {run}
 
     # Generative adversarial (neural network adversary)

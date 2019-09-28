@@ -59,6 +59,10 @@ class BehavioralCloningOptimizer(object):
         eval_avg_length = int(np.mean([len(traj) for traj in sampbatch]))
         timesteps_used = self.curr_iter * self.batch_size
 
+        # bc loss
+        train_loss = self.policy.compute_bclone_loss(self.train_ex_obsfeat, self.train_ex_a)
+
+        logger.record_tabular("bc-loss", train_loss)
         logger.record_tabular("return-average", eval_avg_ret)
         logger.record_tabular("length-average", eval_avg_length)
         logger.record_tabular("total-samples", timesteps_used)
