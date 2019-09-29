@@ -581,4 +581,5 @@ class ImitationOptimizer(object):
         logger.record_tabular("length-average", eval_avg_length)
         logger.record_tabular("total-samples", timesteps_used)
         logger.record_tabular("TimeCost", self.total_time)
+        logger.record_tabular("bclone-loss", bclone_loss)
         logger.dump_tabular()
