@@ -161,7 +161,7 @@ class TransitionClassifier(nn.Model):
             self._compute_reward = thutil.function([obsfeat_B_Df, t_B], rewards_B)
         else:
             compute_reward_without_time = thutil.function([obsfeat_B_Df], rewards_B)
-            self._compute_reward = lambda _obsfeat_B_Df, _a_B_Da, _t_B: compute_reward_without_time(_obsfeat_B_Df)
+            self._compute_reward = lambda _obsfeat_B_Df, _t_B: compute_reward_without_time(_obsfeat_B_Df)
 
         param_vars = self.get_trainable_variables()
 
