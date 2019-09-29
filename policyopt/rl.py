@@ -336,8 +336,12 @@ class SamplingPolicyOptimizer(object):
 
 def TRPO(max_kl, damping, subsample_hvp_frac=.1, grad_stop_tol=1e-6):
 
-    def trpo_step(policy, params0_P, obsfeat, a, adist, adv):
-        feed = (obsfeat, a, adist, util.standardized(adv))
+    def trpo_step(policy, params0_P, obsfeat, a, adist, adv, exobsfeat, exa, exadist, exadv):
+        obsfeat_concat = np.concatenate([obsfeat, exobsfeat])
+        a_concat = np.concatenate([a, exa])
+        adist_concat = np.concatenate([adist, exadist])
+        adv_concat = np.concatenate([util.standardized(adv), exadv]) # adv normalize
+        feed = (obsfeat_concat, a_concat, adist_concat, adist_concat)
         stepinfo = policy._ngstep(feed, max_kl=max_kl, damping=damping, subsample_hvp_frac=subsample_hvp_frac, grad_stop_tol=grad_stop_tol)
         return [
             ('dl', stepinfo.obj1 - stepinfo.obj0, float), # improvement of penalized objective
@@ -345,7 +349,6 @@ def TRPO(max_kl, damping, subsample_hvp_frac=.1, grad_stop_tol=1e-6):
             ('gnorm', stepinfo.gnorm, float), # gradient norm
             ('bt', stepinfo.bt, int), # number of backtracking steps
         ]
-
     return trpo_step
 
 

@@ -189,7 +189,7 @@ class TransitionClassifier(nn.Model):
     def compute_reward(self, obsfeat_B_Df, t_B):
         return self._compute_reward(obsfeat_B_Df, t_B)
 
-    def fit(self, obsfeat_B_Df, t_B, exobs_Bex_Do, exa_Bex_Da, ext_Bex):
+    def fit(self, obsfeat_B_Df, t_B, exobs_Bex_Do, ext_Bex):
         # Transitions from the current policy go first, then transitions from the expert
         obsfeat_Ball_Df = np.concatenate([obsfeat_B_Df, exobs_Bex_Do])
         # a_Ball_Da = np.concatenate([a_B_Da, exa_Bex_Da])
@@ -496,18 +496,27 @@ class ImitationOptimizer(object):
             with util.Timer() as t_step:
                 # Use demonstrated state information.
                 params0_P = self.policy.get_params()
-                step_print = self.step_func(
-                    self.policy, params0_P,
-                    samp_pobsfeat.stacked, sampbatch.a.stacked, sampbatch.adist.stacked,
-                    advantages.stacked)
-                self.policy.update_obsnorm(samp_pobsfeat.stacked)
 
-                # Use demonstrated state-action conditional information.
+                # add demo data.
                 inds = np.random.choice(self.ex_robsfeat.shape[0], size=samp_pobsfeat.stacked.shape[0])
                 batch_obsfeat_B_Do = self.ex_robsfeat[inds, :]
                 batch_a_B_Da = self.ex_a[inds, :]
-                # Take step
-                bclone_loss = self.policy.step_bclone(batch_obsfeat_B_Do, batch_a_B_Da, 1e-3)
+                batch_adist = self.policy._compute_action_dist_params(batch_obsfeat_B_Do)
+                batch_adv = np.ones_like(advantages.stacked)
+
+                step_print = self.step_func(
+                    self.policy, params0_P,
+                    samp_pobsfeat.stacked, sampbatch.a.stacked, sampbatch.adist.stacked,
+                    advantages.stacked, batch_obsfeat_B_Do, batch_a_B_Da, batch_adist, batch_adv)
+                self.policy.update_obsnorm(samp_pobsfeat.stacked)
+
+                bclone_loss = self.policy.compute_bclone_loss(batch_obsfeat_B_Do, batch_a_B_Da)
+                # Use demonstrated state-action conditional information.
+                # inds = np.random.choice(self.ex_robsfeat.shape[0], size=samp_pobsfeat.stacked.shape[0])
+                # batch_obsfeat_B_Do = self.ex_robsfeat[inds, :]
+                # batch_a_B_Da = self.ex_a[inds, :]
+                # # Take step
+                # bclone_loss = self.policy.step_bclone(batch_obsfeat_B_Do, batch_a_B_Da, 1e-3)
 
 
             # Fit reward function
@@ -520,7 +529,7 @@ class ImitationOptimizer(object):
                     exbatch_pobsfeat = self.ex_pobsfeat[inds,:] # only used for logging
                     exbatch_a = self.ex_a[inds,:]
                     exbatch_t = self.ex_t[inds]
-                    rfit_print = self.reward_func.fit(samp_robsfeat_stacked, sampbatch.time.stacked, exbatch_robsfeat, exbatch_a, exbatch_t)
+                    rfit_print = self.reward_func.fit(samp_robsfeat_stacked, sampbatch.time.stacked, exbatch_robsfeat, exbatch_t)
                 else:
                     rfit_print = []
 
