@@ -5,26 +5,26 @@ tasks:
     env: CartPole-v0
     policy: expert_policies/classic/CartPole-v0.h5/snapshots/iter0000100
     cuts_off_on_success: false
-    data_subsamp_freq: 10
+    data_subsamp_freq: 20
 
   - name: mountaincar
     env: MountainCar-v0
     policy: expert_policies/classic/MountainCar-v0.h5/snapshots/iter0000100
     cuts_off_on_success: true
-    data_subsamp_freq: 5
+    data_subsamp_freq: 10
 
   - name: acrobot
     env: Acrobot-v0
     policy: expert_policies/classic/Acrobot-v0.h5/snapshots/iter0000100
     cuts_off_on_success: true
-    data_subsamp_freq: 5
+    data_subsamp_freq: 10
 
 
 training:
   full_dataset_num_trajs: 10
-  dataset_num_trajs: [1, 4, 7, 10]
+  dataset_num_trajs: [1, 10]
   deterministic_expert: false
-  runs: 1
+  runs: 3
 
   algorithms:
     # Behavioral cloning
