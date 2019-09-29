@@ -114,7 +114,7 @@ class TransitionClassifier(nn.Model):
                     net = nn.FeedforwardNet(net_input, (net_input_dim,), self.hidden_spec)
                 with nn.variable_scope('out'):
                     out_layer = nn.AffineLayer(net.output, net.output_shape, (1,), initializer=np.zeros((net.output_shape[0], 1)))
-                scores_B = out_layer.output[:,0]
+                scores_B = out_layer.output[:, 0]
 
             else:
                 # For a finite action space, map observation observations to a vector of rewards
@@ -133,10 +133,13 @@ class TransitionClassifier(nn.Model):
                 with nn.variable_scope('hidden'):
                     net = nn.FeedforwardNet(net_input, (net_input_dim,), self.hidden_spec)
                 with nn.variable_scope('out'):
-                    out_layer = nn.AffineLayer(
-                        net.output, net.output_shape, (self.action_space.size,),
-                        initializer=np.zeros((net.output_shape[0], self.action_space.size)))
+                    # out_layer = nn.AffineLayer(
+                    #     net.output, net.output_shape, (self.action_space.size,),
+                    #     initializer=np.zeros((net.output_shape[0], self.action_space.size)))
+                    out_layer = nn.AffineLayer(net.output, net.output_shape, (1,),
+                                               initializer=np.zeros((net.output_shape[0], 1)))
                 # scores_B = out_layer.output[tensor.arange(normedobs_B_Df.shape[0]), a_B_Da[:,0]]
+                scores_B = out_layer.output[:, 0]
 
         if self.include_time:
             self._compute_scores = thutil.function([obsfeat_B_Df, t_B], scores_B)
