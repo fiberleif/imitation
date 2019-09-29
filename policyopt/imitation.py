@@ -591,6 +591,12 @@ class ImitationOptimizer(object):
             obsfeat_fn=self.policy_obsfeat_fn,
             cfg=self.eval_cfg)
 
+        # add demo data.
+        inds = np.random.choice(self.ex_robsfeat.shape[0], size=8000)
+        batch_obsfeat_B_Do = self.ex_robsfeat[inds, :]
+        batch_a_B_Da = self.ex_a[inds, :]
+        bclone_loss = self.policy.compute_bclone_loss(batch_obsfeat_B_Do, batch_a_B_Da)
+
         eval_avg_ret = sampbatch.r.padded(fill=0.).sum(axis=1).mean()
         eval_avg_length = int(np.mean([len(traj) for traj in sampbatch]))
         timesteps_used = self.curr_iter * self.sim_cfg.min_total_sa
@@ -599,4 +605,5 @@ class ImitationOptimizer(object):
         logger.record_tabular("length-average", eval_avg_length)
         logger.record_tabular("total-samples", timesteps_used)
         logger.record_tabular("TimeCost", self.total_time)
+        logger.record_tabular("bclone-loss", bclone_loss)
         logger.dump_tabular()
