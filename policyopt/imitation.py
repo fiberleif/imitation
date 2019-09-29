@@ -491,6 +491,11 @@ class ImitationOptimizer(object):
                     advantages.stacked)
                 self.policy.update_obsnorm(samp_pobsfeat.stacked)
 
+                inds = np.random.choice(self.ex_robsfeat.shape[0], size=samp_pobsfeat.stacked.shape[0])
+                batch_obsfeat_B_Do = self.ex_robsfeat[inds, :]
+                batch_a_B_Da = self.ex_a[inds, :]
+                bclone_loss = self.policy.compute_bclone_loss(batch_obsfeat_B_Do, batch_a_B_Da)
+
             # Fit reward function
             # print 'Fitting reward'
             with util.Timer() as t_r_fit:
@@ -554,6 +559,7 @@ class ImitationOptimizer(object):
         print("trueret: {}".format(sampbatch.r.padded(fill=0.).sum(axis=1).mean()))
         print("avglen: {}".format(int(np.mean([len(traj) for traj in sampbatch]))))
         print("nsa: {}".format(sum(len(traj) for traj in sampbatch)))
+        print("bc_loss: {}".format(bclone_loss))
         print("---------------")
 
     def eval(self):
@@ -565,6 +571,11 @@ class ImitationOptimizer(object):
         eval_avg_ret = sampbatch.r.padded(fill=0.).sum(axis=1).mean()
         eval_avg_length = int(np.mean([len(traj) for traj in sampbatch]))
         timesteps_used = self.curr_iter * self.sim_cfg.min_total_sa
+
+        inds = np.random.choice(self.ex_robsfeat.shape[0], size=8000)
+        batch_obsfeat_B_Do = self.ex_robsfeat[inds, :]
+        batch_a_B_Da = self.ex_a[inds, :]
+        bclone_loss = self.policy.compute_bclone_loss(batch_obsfeat_B_Do, batch_a_B_Da)
 
         logger.record_tabular("return-average", eval_avg_ret)
         logger.record_tabular("length-average", eval_avg_length)
