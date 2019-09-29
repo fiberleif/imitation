@@ -341,7 +341,7 @@ def TRPO(max_kl, damping, subsample_hvp_frac=.1, grad_stop_tol=1e-6):
         a_concat = np.concatenate([a, exa])
         adist_concat = np.concatenate([adist, exadist])
         adv_concat = np.concatenate([util.standardized(adv), exadv]) # adv normalize
-        feed = (obsfeat_concat, a_concat, adist_concat, adist_concat)
+        feed = (obsfeat_concat, a_concat, adist_concat, adv_concat)
         stepinfo = policy._ngstep(feed, max_kl=max_kl, damping=damping, subsample_hvp_frac=subsample_hvp_frac, grad_stop_tol=grad_stop_tol)
         return [
             ('dl', stepinfo.obj1 - stepinfo.obj0, float), # improvement of penalized objective
