@@ -86,18 +86,22 @@ class TransitionClassifier(nn.Model):
         with nn.variable_scope(varscope_name) as self.__varscope:
             # Map (s,a) pairs to classifier scores (log probabilities of classes)
             obsfeat_B_Df = tensor.matrix(name='obsfeat_B_Df')
-            a_B_Da = tensor.matrix(name='a_B_Da', dtype=theano.config.floatX if self.action_space.storage_type == float else 'int64')
+            # a_B_Da = tensor.matrix(name='a_B_Da', dtype=theano.config.floatX if self.action_space.storage_type == float else 'int64')
             t_B = tensor.vector(name='t_B')
 
             scaled_t_B = self.time_scale * t_B
 
             if isinstance(self.action_space, ContinuousSpace):
                 # For a continuous action space, map observation-action pairs to a real number (reward)
-                trans_B_Doa = tensor.concatenate([obsfeat_B_Df, a_B_Da], axis=1)
-                trans_dim = self.obsfeat_space.dim + self.action_space.dim
+                # trans_B_Doa = tensor.concatenate([obsfeat_B_Df, a_B_Da], axis=1)
+                # trans_dim = self.obsfeat_space.dim + self.action_space.dim
+                trans_B_Doa = obsfeat_B_Df
+                trans_dim = self.obsfeat_space.dim
+
                 # Normalize
                 with nn.variable_scope('inputnorm'):
-                    self.inputnorm = (nn.Standardizer if enable_inputnorm else nn.NoOpStandardizer)(self.obsfeat_space.dim + self.action_space.dim)
+                    # self.inputnorm = (nn.Standardizer if enable_inputnorm else nn.NoOpStandardizer)(self.obsfeat_space.dim + self.action_space.dim)
+                    self.inputnorm = (nn.Standardizer if enable_inputnorm else nn.NoOpStandardizer)(self.obsfeat_space.dim)
                 normedtrans_B_Doa = self.inputnorm.standardize_expr(trans_B_Doa)
                 if self.include_time:
                     net_input = tensor.concatenate([normedtrans_B_Doa, scaled_t_B[:,None]], axis=1)
@@ -132,13 +136,13 @@ class TransitionClassifier(nn.Model):
                     out_layer = nn.AffineLayer(
                         net.output, net.output_shape, (self.action_space.size,),
                         initializer=np.zeros((net.output_shape[0], self.action_space.size)))
-                scores_B = out_layer.output[tensor.arange(normedobs_B_Df.shape[0]), a_B_Da[:,0]]
+                # scores_B = out_layer.output[tensor.arange(normedobs_B_Df.shape[0]), a_B_Da[:,0]]
 
         if self.include_time:
-            self._compute_scores = thutil.function([obsfeat_B_Df, a_B_Da, t_B], scores_B) # scores define the conditional distribution p(label | (state,action))
+            self._compute_scores = thutil.function([obsfeat_B_Df, t_B], scores_B)
         else:
-            compute_scores_without_time = thutil.function([obsfeat_B_Df, a_B_Da], scores_B)
-            self._compute_scores = lambda _obsfeat_B_Df, _a_B_Da, _t_B: compute_scores_without_time(_obsfeat_B_Df, _a_B_Da)
+            compute_scores_without_time = thutil.function([obsfeat_B_Df], scores_B)
+            self._compute_scores = lambda _obsfeat_B_Df, _t_B: compute_scores_without_time(_obsfeat_B_Df)
 
         if self.favor_zero_expert_reward:
             # 0 for expert-like states, goes to -inf for non-expert-like states
@@ -151,10 +155,10 @@ class TransitionClassifier(nn.Model):
             # e.g. walking simulations that get cut off when the robot falls over
             rewards_B = -tensor.log(1.-tensor.nnet.sigmoid(scores_B))
         if self.include_time:
-            self._compute_reward = thutil.function([obsfeat_B_Df, a_B_Da, t_B], rewards_B)
+            self._compute_reward = thutil.function([obsfeat_B_Df, t_B], rewards_B)
         else:
-            compute_reward_without_time = thutil.function([obsfeat_B_Df, a_B_Da], rewards_B)
-            self._compute_reward = lambda _obsfeat_B_Df, _a_B_Da, _t_B: compute_reward_without_time(_obsfeat_B_Df, _a_B_Da)
+            compute_reward_without_time = thutil.function([obsfeat_B_Df], rewards_B)
+            self._compute_reward = lambda _obsfeat_B_Df, _a_B_Da, _t_B: compute_reward_without_time(_obsfeat_B_Df)
 
         param_vars = self.get_trainable_variables()
 
@@ -168,28 +172,29 @@ class TransitionClassifier(nn.Model):
 
         if self.include_time:
             self._adamstep = thutil.function(
-                [obsfeat_B_Df, a_B_Da, t_B, labels_B, weights_B], loss,
+                [obsfeat_B_Df, t_B, labels_B, weights_B], loss,
                 updates=thutil.adam(loss, param_vars, lr=adam_lr))
         else:
             adamstep_without_time = thutil.function(
-                [obsfeat_B_Df, a_B_Da, labels_B, weights_B], loss,
+                [obsfeat_B_Df, labels_B, weights_B], loss,
                 updates=thutil.adam(loss, param_vars, lr=adam_lr))
-            self._adamstep = lambda _obsfeat_B_Df, _a_B_Da, _t_B, _labels_B, _weights_B: adamstep_without_time(_obsfeat_B_Df, _a_B_Da, _labels_B, _weights_B)
+            self._adamstep = lambda _obsfeat_B_Df, _t_B, _labels_B, _weights_B: adamstep_without_time(_obsfeat_B_Df, _a_B_Da, _labels_B, _weights_B)
 
     @property
     def varscope(self): return self.__varscope
 
-    def compute_reward(self, obsfeat_B_Df, a_B_Da, t_B):
-        return self._compute_reward(obsfeat_B_Df, a_B_Da, t_B)
+    def compute_reward(self, obsfeat_B_Df, t_B):
+        return self._compute_reward(obsfeat_B_Df, t_B)
 
-    def fit(self, obsfeat_B_Df, a_B_Da, t_B, exobs_Bex_Do, exa_Bex_Da, ext_Bex):
+    def fit(self, obsfeat_B_Df, t_B, exobs_Bex_Do, exa_Bex_Da, ext_Bex):
         # Transitions from the current policy go first, then transitions from the expert
         obsfeat_Ball_Df = np.concatenate([obsfeat_B_Df, exobs_Bex_Do])
-        a_Ball_Da = np.concatenate([a_B_Da, exa_Bex_Da])
+        # a_Ball_Da = np.concatenate([a_B_Da, exa_Bex_Da])
         t_Ball = np.concatenate([t_B, ext_Bex])
 
         # Update normalization
-        self.update_inputnorm(obsfeat_Ball_Df, a_Ball_Da)
+        # self.update_inputnorm(obsfeat_Ball_Df, a_Ball_Da)
+        self.update_inputnorm(obsfeat_Ball_Df)
 
         B = obsfeat_B_Df.shape[0] # number of examples from the current policy
         Ball = obsfeat_Ball_Df.shape[0] # Ball - b = num examples from expert
@@ -205,10 +210,11 @@ class TransitionClassifier(nn.Model):
 
         # Optimize
         for _ in range(self.adam_steps):
-            loss, kl, num_bt_steps = self._adamstep(obsfeat_Ball_Df, a_Ball_Da, t_Ball, labels_Ball, weights_Ball), None, 0
-
+            # loss, kl, num_bt_steps = self._adamstep(obsfeat_Ball_Df, a_Ball_Da, t_Ball, labels_Ball, weights_Ball), None, 0
+            loss, kl, num_bt_steps = self._adamstep(obsfeat_Ball_Df, t_Ball, labels_Ball, weights_Ball), None, 0
         # Evaluate
-        scores_Ball = self._compute_scores(obsfeat_Ball_Df, a_Ball_Da, t_Ball); assert scores_Ball.shape == (Ball,)
+        # scores_Ball = self._compute_scores(obsfeat_Ball_Df, a_Ball_Da, t_Ball); assert scores_Ball.shape == (Ball,)
+        scores_Ball = self._compute_scores(obsfeat_Ball_Df, t_Ball); assert scores_Ball.shape == (Ball,)
         accuracy = .5 * (weights_Ball * ((scores_Ball < 0) == (labels_Ball == 0))).sum()
         accuracy_for_currpolicy = (scores_Ball[:B] <= 0).mean()
         accuracy_for_expert = (scores_Ball[B:] > 0).mean()
@@ -225,9 +231,10 @@ class TransitionClassifier(nn.Model):
             # ('snorm', util.maxnorm(scores_Ball), float),
         ]
 
-    def update_inputnorm(self, obs_B_Do, a_B_Da):
+    def update_inputnorm(self, obs_B_Do):
         if isinstance(self.action_space, ContinuousSpace):
-            self.inputnorm.update(np.concatenate([obs_B_Do, a_B_Da], axis=1))
+            # self.inputnorm.update(np.concatenate([obs_B_Do, a_B_Da], axis=1))
+            self.inputnorm.update(obs_B_Do)
         else:
             self.inputnorm.update(obs_B_Do)
 
@@ -460,7 +467,7 @@ class ImitationOptimizer(object):
                 samp_robsfeat_stacked = self.reward_obsfeat_fn(sampbatch.obs.stacked)
                 # Reward is computed wrt current reward function
                 # TODO: normalize rewards
-                rcurr_stacked = self.reward_func.compute_reward(samp_robsfeat_stacked, sampbatch.a.stacked, sampbatch.time.stacked)
+                rcurr_stacked = self.reward_func.compute_reward(samp_robsfeat_stacked, sampbatch.time.stacked)
                 assert rcurr_stacked.shape == (samp_robsfeat_stacked.shape[0],)
 
                 # If we're regularizing the policy, add negative log probabilities to the rewards
@@ -484,12 +491,21 @@ class ImitationOptimizer(object):
             # Take a step
             # print 'Fitting policy'
             with util.Timer() as t_step:
+                # Use demonstrated state information.
                 params0_P = self.policy.get_params()
                 step_print = self.step_func(
                     self.policy, params0_P,
                     samp_pobsfeat.stacked, sampbatch.a.stacked, sampbatch.adist.stacked,
                     advantages.stacked)
                 self.policy.update_obsnorm(samp_pobsfeat.stacked)
+
+                # Use demonstrated state-action conditional information.
+                inds = np.random.choice(self.ex_robsfeat.shape[0], size=samp_pobsfeat.stacked.shape[0])
+                batch_obsfeat_B_Do = self.ex_robsfeat[inds, :]
+                batch_a_B_Da = self.ex_a[inds, :]
+                # Take step
+                bclone_loss = self.policy.step_bclone(batch_obsfeat_B_Do, batch_a_B_Da, 1e-3)
+
 
             # Fit reward function
             # print 'Fitting reward'
@@ -501,7 +517,7 @@ class ImitationOptimizer(object):
                     exbatch_pobsfeat = self.ex_pobsfeat[inds,:] # only used for logging
                     exbatch_a = self.ex_a[inds,:]
                     exbatch_t = self.ex_t[inds]
-                    rfit_print = self.reward_func.fit(samp_robsfeat_stacked, sampbatch.a.stacked, sampbatch.time.stacked, exbatch_robsfeat, exbatch_a, exbatch_t)
+                    rfit_print = self.reward_func.fit(samp_robsfeat_stacked, sampbatch.time.stacked, exbatch_robsfeat, exbatch_a, exbatch_t)
                 else:
                     rfit_print = []
 
@@ -514,7 +530,7 @@ class ImitationOptimizer(object):
 
                     # TODO: this should be a byproduct of reward fitting
                     rnew = RaggedArray(
-                        self.reward_func.compute_reward(samp_robsfeat_stacked, sampbatch.a.stacked, sampbatch.time.stacked),
+                        self.reward_func.compute_reward(samp_robsfeat_stacked, sampbatch.time.stacked),
                         lengths=sampbatch.r.lengths)
                     qnew, _ = rl.compute_qvals(rnew, self.discount)
                     vfit_print = self.value_func.fit(samp_pobsfeat.stacked, sampbatch.time.stacked, qnew.stacked)
@@ -554,6 +570,7 @@ class ImitationOptimizer(object):
         print("trueret: {}".format(sampbatch.r.padded(fill=0.).sum(axis=1).mean()))
         print("avglen: {}".format(int(np.mean([len(traj) for traj in sampbatch]))))
         print("nsa: {}".format(sum(len(traj) for traj in sampbatch)))
+        print("bc_loss: {}".format(bclone_loss))
         print("---------------")
 
     def eval(self):
