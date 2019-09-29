@@ -340,6 +340,14 @@ def TRPO(max_kl, damping, subsample_hvp_frac=.1, grad_stop_tol=1e-6):
         obsfeat_concat = np.concatenate([obsfeat, exobsfeat])
         a_concat = np.concatenate([a, exa])
         adist_concat = np.concatenate([adist, exadist])
+
+        print("before adv mean:", np.mean(adv))
+        print("before adv std:", np.std(adv))
+        print("after adv mean:", np.mean(util.standardized(adv)))
+        print("after adv std:", np.std(util.standardized(adv)))
+        print("after adv max:", np.max(util.standardized(adv)))
+        print("after adv min:", np.min(util.standardized(adv)))
+
         adv_concat = np.concatenate([util.standardized(adv), exadv]) # adv normalize
         feed = (obsfeat_concat, a_concat, adist_concat, adv_concat)
         stepinfo = policy._ngstep(feed, max_kl=max_kl, damping=damping, subsample_hvp_frac=subsample_hvp_frac, grad_stop_tol=grad_stop_tol)
