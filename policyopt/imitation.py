@@ -181,7 +181,7 @@ class TransitionClassifier(nn.Model):
             adamstep_without_time = thutil.function(
                 [obsfeat_B_Df, labels_B, weights_B], loss,
                 updates=thutil.adam(loss, param_vars, lr=adam_lr))
-            self._adamstep = lambda _obsfeat_B_Df, _t_B, _labels_B, _weights_B: adamstep_without_time(_obsfeat_B_Df, _a_B_Da, _labels_B, _weights_B)
+            self._adamstep = lambda _obsfeat_B_Df, _t_B, _labels_B, _weights_B: adamstep_without_time(_obsfeat_B_Df, _labels_B, _weights_B)
 
     @property
     def varscope(self): return self.__varscope
