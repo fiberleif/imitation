@@ -8,9 +8,9 @@ tasks:
 
 training:
   full_dataset_num_trajs: 240
-  dataset_num_trajs: [80, 160, 240]
+  dataset_num_trajs: [80, 240]
   deterministic_expert: false
-  runs: 1
+  runs: 5
 
   algorithms:
     # Behavioral cloning
@@ -22,7 +22,9 @@ training:
         --limit_trajs {num_trajs}
         --data_subsamp_freq {data_subsamp_freq}
         --max_iter 20001
-        --log {out}
+        --log_dir log
+        --log_freq 2000
+        --run {run}
 
     # Generative adversarial imitation learning
     - name: ga
@@ -33,11 +35,13 @@ training:
         --limit_trajs {num_trajs}
         --data_subsamp_freq {data_subsamp_freq}
         --favor_zero_expert_reward {cuts_off_on_success}
-        --min_total_sa 50000
+        --min_total_sa 15000
         --max_iter 1501
         --reward_include_time 0
         --reward_lr .01
-        --log {out}
+        --log_dir log
+        --log_freq 10
+        --run {run}
 
 options:
   storagedir: imitation_runs/humanoid

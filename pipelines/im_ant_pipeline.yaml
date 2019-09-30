@@ -1,19 +1,7 @@
 tasks:
-  - name: hopper
-    env: Hopper-v1
-    policy: expert_policies/modern/log_Hopper-v0_3.h5/snapshots/iter0000500
-    data_subsamp_freq: 20
-    cuts_off_on_success: false
-
-  - name: walker
-    env: Walker2d-v1
-    policy: expert_policies/modern/walker_eb5b2e_1.h5/snapshots/iter0000480
-    data_subsamp_freq: 20
-    cuts_off_on_success: false
-
-  - name: halfcheetah
-    env: HalfCheetah-v1
-    policy: expert_policies/modern/log_HalfCheetah-v0_2.h5/snapshots/iter0000500
+  - name: ant
+    env: Ant-v1
+    policy: expert_policies/modern/log_Ant-v1_0.h5/snapshots/iter0000500
     data_subsamp_freq: 20
     cuts_off_on_success: false
 
@@ -45,15 +33,16 @@ training:
         --limit_trajs {num_trajs}
         --data_subsamp_freq {data_subsamp_freq}
         --favor_zero_expert_reward {cuts_off_on_success}
-        --min_total_sa 8000
-        --max_iter 1001
+        --min_total_sa 15000
+        --max_iter 1501
         --reward_include_time 0
         --reward_lr .01
         --log_dir log
         --log_freq 10
         --run {run}
+
 options:
-  storagedir: imitation_runs/modern_stochastic
+  storagedir: imitation_runs/ant
   traj_subdir: trajs
   checkpt_subdir: checkpoints_all
 
@@ -61,6 +50,6 @@ options:
   results_filename: results.h5
 
   pbs:
-    jobname: im_modern
+    jobname: im_ant
     queue: atlas
-    ppn: 12
+    ppn: 6
