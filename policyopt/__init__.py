@@ -3,7 +3,7 @@ from policyopt import util
 import numpy as np
 import multiprocessing
 from time import sleep
-
+import gym
 
 # State/action spaces
 class Space(object):
@@ -254,18 +254,25 @@ class MDP(object):
     def new_batched_sim(self, batch_size):
         return SequentialBatchedSim(self, batch_size)
 
+    # only use for the child class: RLGymMDP
     def sim_single(self, policy_fn, obsfeat_fn, max_traj_len, init_state=None):
         '''Simulate a single trajectory'''
-        sim = self.new_sim(init_state=init_state)
+        # sim = self.new_sim(init_state=init_state)
         obs, obsfeat, actions, actiondists, rewards = [], [], [], [], []
+        current_obs = self.gym_env.reset()
         for _ in xrange(max_traj_len):
-            obs.append(sim.obs[None,...].copy())
+            # obs.append(sim.obs[None,...].copy())
+            obs.append(current_obs[None])
             obsfeat.append(obsfeat_fn(obs[-1]))
             a, adist = policy_fn(obsfeat[-1])
             actions.append(a)
             actiondists.append(adist)
-            rewards.append(sim.step(a[0,:]))
-            if sim.done: break
+            # rewards.append(sim.step(a[0,:]))
+            # if sim.done: break
+            # rewards.append(sim.step(a[0,:]))
+            current_obs, reward, done, _ = self.gym_env.step(a[0])
+            rewards.append(reward)
+            if done: break
         obs_T_Do = np.concatenate(obs); assert obs_T_Do.shape == (len(obs), self.obs_space.storage_size)
         obsfeat_T_Df = np.concatenate(obsfeat); assert obsfeat_T_Df.shape[0] == len(obs)
         adist_T_Pa = np.concatenate(actiondists); assert adist_T_Pa.ndim == 2 and adist_T_Pa.shape[0] == len(obs)
